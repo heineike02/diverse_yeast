@@ -237,33 +237,7 @@ ggplotly(lfc_scatter)
 #ggplotly(lfc_scatter,source = "select", tooltip = c("key"))
 
 
+#summary(output_comb)
+#table(factor(orth_map$orth_type))
+#table(factor(output_comb_type$orth_type))
 
-exp_list[['Zrou']]['C5DZP2',]
-
-summary(output_comb)
-table(factor(orth_map$orth_type))
-
-table(factor(output_comb_type$orth_type))
-
-##Problems:  Lots of NAs in no_eggnog_orthologs LFCs - where do they come from and what to do about them? 
-
-# Remove NA's present in all conditions.  Replace NA's present in just some conditions with min value. 
-a = as.data.frame(lapply(as.data.frame(is.na(exp_list[['Zrou']])), as.numeric))
-
-asas.numeric(is.na(exp_list[['Zrou']])[,1])
-
-cars[, 1:2] <- sapply(cars[, 1:2], as.factor)
-rowsum(as.integer(is.na(exp_list[['Zrou']])))
-
-output_comb_type[which(is.na(output_comb_type$sc_orf)),'genename_A'], file=paste(working_dir, 'scer_missing_orfs.txt', sep='')
-
-
-
-
-
-
-min(protein_data)
-
-
-
- ?replace_na
