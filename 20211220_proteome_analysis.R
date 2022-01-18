@@ -183,7 +183,7 @@ for (orth_type in c('no_eggnog_orthologs','no_target_orthologs' )) {
   output_comb = rbind(output_comb, output_comb_type)
 }
 
-for (orth_type in c('one2one', 'no_target_orthologs', 'many2one', 'many2many')) {
+for (orth_type in c('one2one', 'no_target_orthologs', 'one2many', 'many2one', 'many2many')) {
   orth_map_type_subset = orth_map[which(orth_map$orth_type==orth_type),]
   output_comb_type = data.frame(genename_B = orth_map_type_subset$source_genename_short, 
                                 LFC_B = outputB_all[orth_map_type_subset$source_genename_short, output_cond],
@@ -232,6 +232,6 @@ ggplotly(lfc_scatter)
 
 
 #summary(output_comb)
-#table(factor(orth_map$orth_type))
+table(factor(orth_map$orth_type))
 #table(factor(output_comb_type$orth_type))
 
