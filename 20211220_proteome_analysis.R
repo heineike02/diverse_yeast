@@ -12,13 +12,23 @@ narep_pct_min = 0.9
 infrep_pct_max = 1.05
 
 cond_order = c('CN1_2', 'CN1_6','C2_2', 'C2_6', 'N2_2', 'N2_6')
+
+#Fold Change is calculated for various pairs of gene expression value
+fc_combos = list('CN1_C2_2'= c('CN1_2', 'C2_2'),
+                 'CN1_N2_2'= c('CN1_2', 'N2_2'),
+                 'CN1_C2_6'= c('CN1_6', 'C2_6'),
+                 'CN1_N2_6'= c('CN1_6', 'N2_6'),
+                 'CN1_2_6' = c('CN1_2', 'CN1_6'),
+                 'C2_2_6' = c('C2_2', 'C2_6'),
+                 'N2_2_6' = c('N2_2', 'N2_6')
+)
+
 #saved annotations_proteins as a .tsv using data from 210318_annotation_tables.Rdata
 #write.table(annotations_proteins, paste(working_dir,'annotations_proteins.tsv', sep = ''))
 
 
-#Load protein table for each species
 
-
+#Function for lower scatter plots to keep plot range the same for X and Y for all plots. 
 lowerfun <- function(data,mapping, pt_alpha, pt_size, plotrange){
   ggplot(data = data, mapping = mapping)+
   geom_point(alpha=pt_alpha, size=pt_size) +
@@ -26,28 +36,27 @@ lowerfun <- function(data,mapping, pt_alpha, pt_size, plotrange){
   scale_y_continuous(limits = plotrange)
 }
 
+#Function to pass plotrange parameters to distribution plots on the center diagonal.  
 diagfun <- function(data, mapping, plotrange){
   ggplot(data = data, mapping = mapping) +
   geom_density(data=data, mapping=mapping) +
   xlim(plotrange)
 }
 
+#Extracts condition column names from long names (that include species name)
 col_xform = function(col) {
   colsplit = strsplit(col, '_')
   new_col = paste(colsplit[[1]][4:5], collapse='_')
 }
 
 
+
+#For each species saves fold change data and visualizes matrix of scatter plots ussing ggpairs
 exp_list = list()
 fc_list = list()
 
-
-
-
-
-#for each species
 for (spec in specs) {
-  #load protein data
+  #Load protein table for each species
   protein_data_fname = paste(working_dir, spec, '/', spec4_to_spec2[[spec]], '_ProteinWide_BatchCorrected_0_CV0_Stringent_woQC.tsv', sep='')
   protein_data = read.table(file=protein_data_fname, header=TRUE)
   rownames(protein_data) = protein_data$Protein.Group
@@ -90,16 +99,6 @@ for (spec in specs) {
   show(p_exp)
   
   #Calculate LFC
-  
-  #FC combos
-  fc_combos = list('CN1_C2_2'= c('CN1_2', 'C2_2'),
-  'CN1_N2_2'= c('CN1_2', 'N2_2'),
-  'CN1_C2_6'= c('CN1_6', 'C2_6'),
-  'CN1_N2_6'= c('CN1_6', 'N2_6'),
-  'CN1_2_6' = c('CN1_2', 'CN1_6'),
-  'C2_2_6' = c('C2_2', 'C2_6'),
-  'N2_2_6' = c('N2_2', 'N2_6')
-  )
   
   protein_data_fc = data.frame(row.names=rownames(protein_data_log))
   for (fc_combo in names(fc_combos)) {
@@ -168,9 +167,6 @@ scer_annotation = read.table(file=paste(working_dir, 'annotations_proteins.tsv',
 
 rownames(scer_annotation) = scer_annotation$systematic_name
 
-
-
-
 output_comb = data.frame()
 #colnames(orth_map_comb) = c('genename_B', 'LFC_B', 'genename_A', 'sc_orf', 'LFC_A', 'orth_type')
 
@@ -187,8 +183,7 @@ for (orth_type in c('no_eggnog_orthologs','no_target_orthologs' )) {
   output_comb = rbind(output_comb, output_comb_type)
 }
 
-for (orth_type in c('one2one', 'no_target_orthologs', 'many2many')) {
-
+for (orth_type in c('one2one', 'no_target_orthologs', 'many2one', 'many2many')) {
   orth_map_type_subset = orth_map[which(orth_map$orth_type==orth_type),]
   output_comb_type = data.frame(genename_B = orth_map_type_subset$source_genename_short, 
                                 LFC_B = outputB_all[orth_map_type_subset$source_genename_short, output_cond],
@@ -223,12 +218,11 @@ scer_annotation_rlookup = scer_annotation_rlookup[which(!(is.na(scer_annotation_
 rownames(scer_annotation_rlookup) = scer_annotation_rlookup$gene_name
 
 output_comb_type$sc_orf = scer_annotation_rlookup[output_comb_type$genename_A,"systematic_name"]
-
 output_comb = rbind(output_comb, output_comb_type)
 
 
 
-#plot scatters
+#plot scatter plots using Plotly 
 lfc_scatter = ggplot(data=output_comb, aes(x=LFC_A, y=LFC_B, color=orth_type, text = paste(specA, ' name: ', genename_A, '\n', specB, ' name: ', genename_B, sep='')))  +   #key=genename_A
               geom_point(alpha=0.2)+
               labs(x=specA, y=specB, title=output_cond)
