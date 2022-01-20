@@ -6,7 +6,19 @@ working_dir = "/camp/home/heineib/working/Ben/diverse_strains/processed_data/"
 
 specs = c('Scer', 'Klac', 'Zrou')
 
+#This might not be needed
 spec4_to_spec2 = c('Scer'='SC','Klac'='KL', 'Zrou'='ZR')
+
+#For the s. cerevisiae data it was saved as an R. File.  Opened it and then Saved it as a .tsv using
+#write.table(proteinWide_woQC, paste(working_dir, spec, '/','BY_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_ProteinIds_woQC.tsv', sep=''))
+
+#Need to explicitly write the name of the source data file
+spec_data_fnames = c('Scer' = 'BY_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_ProteinIds_woQC.tsv', 
+                     'Klac' = 'KL_ProteinWide_BatchCorrected_0_CV0_Stringent_woQC.tsv',
+                     'Zrou' = 'ZR_ProteinWide_BatchCorrected_0_CV0_Stringent_woQC.tsv'
+                     )
+
+
 
 narep_pct_min = 0.9
 infrep_pct_max = 1.05
@@ -22,10 +34,6 @@ fc_combos = list('CN1_C2_2'= c('CN1_2', 'C2_2'),
                  'C2_2_6' = c('C2_2', 'C2_6'),
                  'N2_2_6' = c('N2_2', 'N2_6')
 )
-
-#saved annotations_proteins as a .tsv using data from 210318_annotation_tables.Rdata
-#write.table(annotations_proteins, paste(working_dir,'annotations_proteins.tsv', sep = ''))
-
 
 
 #Function for lower scatter plots to keep plot range the same for X and Y for all plots. 
@@ -57,7 +65,7 @@ fc_list = list()
 
 for (spec in specs) {
   #Load protein table for each species
-  protein_data_fname = paste(working_dir, spec, '/', spec4_to_spec2[[spec]], '_ProteinWide_BatchCorrected_0_CV0_Stringent_woQC.tsv', sep='')
+  protein_data_fname = paste(working_dir, spec, '/', spec_data_fnames[[spec]], sep='')
   protein_data = read.table(file=protein_data_fname, header=TRUE)
   rownames(protein_data) = protein_data$Protein.Group
   protein_data$Protein.Group = NULL
@@ -163,9 +171,32 @@ if (nrow(outputB_all) != length(intersect(rownames(outputB_all), orth_map$source
 
 
 #Load Protein Annotation for S. cerevisiae and use it to map orf names onto S. cer data
+
+#saved annotations_proteins as a .tsv using data from 210318_annotation_tables.Rdata
+#write.table(annotations_proteins, paste(working_dir,'annotations_proteins.tsv', sep = ''))
+
 scer_annotation = read.table(file=paste(working_dir, 'annotations_proteins.tsv', sep=''), header=TRUE)
 
+#This shows that there are no lines in our dataset (for BY) that are missing from the uniprot_id list in the annotation file
+setdiff(rownames(fc_list[['Scer']]), scer_annotation$uniprot_id)
+
 rownames(scer_annotation) = scer_annotation$systematic_name
+
+
+#Assess items in the annotation file that have duplicate uniprot ids and are NA for uniprot ID, but have a genename assigned.
+uniprot_split = strsplit(scer_annotation$uniprot_id, ',')
+uniprot_lengths = lapply(uniprot_split,length)
+scer_annotation_uniprot_doubles = scer_annotation[which(uniprot_lengths==2),]
+scer_annotation_uniprot_na = scer_annotation[which(is.na(scer_annotation$uniprot_id)),]
+scer_annotation_uniprot_na_genename_present = scer_annotation_uniprot_na[which(!is.na(scer_annotation_uniprot_na$gene_name)),]
+write.table(scer_annotation_uniprot_doubles, paste(working_dir, 'scer_duplicate_uniprot_ids.tsv', sep=''))
+write.table(scer_annotation_uniprot_na_genename_present, paste(working_dir, 'scer_uniprot_na_genename_present.tsv', sep=''))
+
+
+#There's no way we could recover data for the genes that have NA for Uniprot but data linked to genename - I assume DIANN throws those out
+#Not sure how diann deals with duplicate uniprot ids
+
+
 
 output_comb = data.frame()
 #colnames(orth_map_comb) = c('genename_B', 'LFC_B', 'genename_A', 'sc_orf', 'LFC_A', 'orth_type')
@@ -192,7 +223,8 @@ for (orth_type in c('one2one', 'no_target_orthologs', 'one2many', 'many2one', 'm
                                 LFC_A = NA
   )
   
-  output_comb_type$genename_A = scer_annotation[orth_map_type_subset$target_genename, c('gene_name')]
+  #output_comb_type$genename_A = scer_annotation[orth_map_type_subset$target_genename, c('gene_name')]  #If data is mapped to genename
+  output_comb_type$genename_A = scer_annotation[orth_map_type_subset$target_genename, c('uniprot_id')]  #If data is mapped to uniprot id
   
   output_comb_type$LFC_A = outputA_all[output_comb_type$genename_A,output_cond]
   
@@ -232,6 +264,6 @@ ggplotly(lfc_scatter)
 
 
 #summary(output_comb)
-table(factor(orth_map$orth_type))
+table(factor(output_comb$orth_type))
 #table(factor(output_comb_type$orth_type))
 
