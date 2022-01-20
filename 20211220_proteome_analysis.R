@@ -175,12 +175,23 @@ if (nrow(outputB_all) != length(intersect(rownames(outputB_all), orth_map$source
 #saved annotations_proteins as a .tsv using data from 210318_annotation_tables.Rdata
 #write.table(annotations_proteins, paste(working_dir,'annotations_proteins.tsv', sep = ''))
 
-scer_annotation = read.table(file=paste(working_dir, 'annotations_proteins.tsv', sep=''), header=TRUE)
+scer_annotation = read.delim(file=paste(working_dir, 'uniprot-proteome_UP000002311.tab', sep=''),sep='\t', header=TRUE)
 
-#This shows that there are no lines in our dataset (for BY) that are missing from the uniprot_id list in the annotation file
-setdiff(rownames(fc_list[['Scer']]), scer_annotation$uniprot_id)
+#Switched to uniprot annotation file because it was missing some assignments from uniprot gene name to uniprot ID
+#scer_annotation = read.table(file=paste(working_dir, 'annotations_proteins.tsv', sep=''), header=TRUE)
+
+#renames columns to match original scer_annotation columns
+scer_annotation = rename(scer_annotation, c('uniprot_id'='Entry', 'systematic_name'='Gene.names...ordered.locus..'))
+
+print("List of Uniprot IDs present in the data that are not in the annotation file:")
+print(setdiff(rownames(fc_list[['Scer']]), scer_annotation$uniprot_id))
 
 rownames(scer_annotation) = scer_annotation$systematic_name
+
+
+#Code for old annotation_proteins.tsv file.  
+#
+#rownames(scer_annotation) = scer_annotation$systematic_name
 
 
 #Assess items in the annotation file that have duplicate uniprot ids and are NA for uniprot ID, but have a genename assigned.
@@ -192,6 +203,8 @@ scer_annotation_uniprot_na_genename_present = scer_annotation_uniprot_na[which(!
 write.table(scer_annotation_uniprot_doubles, paste(working_dir, 'scer_duplicate_uniprot_ids.tsv', sep=''))
 write.table(scer_annotation_uniprot_na_genename_present, paste(working_dir, 'scer_uniprot_na_genename_present.tsv', sep=''))
 
+
+#The New Uniprot id mapping doesn't have the double uniprot names listed and doesn't have NAs for Uniprot when a genename is present. 
 
 #There's no way we could recover data for the genes that have NA for Uniprot but data linked to genename - I assume DIANN throws those out
 #Not sure how diann deals with duplicate uniprot ids
