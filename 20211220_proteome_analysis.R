@@ -2,21 +2,31 @@ library(ggplot2)
 library(GGally)
 library(plotly)
 
-working_dir = "/camp/home/heineib/working/Ben/diverse_strains/processed_data/"
+working_dir = "~/OneDrive - Charité - Universitätsmedizin Berlin/R_analysis/Proteomics/processed_data/"
 
-specs = c('Scer', 'Klac', 'Zrou')
+specs = c('Scer-BY4741KI', 'Scer', 'Klac', 'Lthe', 'Calb', 'Ctro', 'Dhan', 'Wano', 'Spom', 'Kmar', 'Zrou', 'Ppas', 'Gcan')
 
 #This might not be needed
-spec4_to_spec2 = c('Scer'='SC','Klac'='KL', 'Zrou'='ZR')
+spec4_to_spec2 = c('Scer-BY4741KI'='BY', 'Scer'='SC', 'Klac'='KL', 'Lthe'='LT', 'Calb'='CA', 'Ctro'='CT', 'Dhan'='DH', 'Wano'='WA', 'Spom'='SP', 'Kmar'='KM', 'Zrou'='ZR', 'Ppas'='PP', 'Gcan'='GC')
 
 #For the s. cerevisiae data it was saved as an R. File.  Opened it and then Saved it as a .tsv using
 #write.table(proteinWide_woQC, paste(working_dir, spec, '/','BY_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_ProteinIds_woQC.tsv', sep=''))
 
 #Need to explicitly write the name of the source data file
-spec_data_fnames = c('Scer' = 'BY_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_ProteinIds_woQC.tsv', 
-                     'Klac' = 'KL_ProteinWide_BatchCorrected_0_CV0_Stringent_woQC.tsv',
-                     'Zrou' = 'ZR_ProteinWide_BatchCorrected_0_CV0_Stringent_woQC.tsv'
-                     )
+spec_data_fnames = c('Scer-BY4741KI' = 'BY_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_woQC.tsv', 
+                     'Scer' = 'SC_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_woQC.tsv',
+                     'Klac' = 'KL_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_woQC.tsv',
+                     'Lthe' = 'LT_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_woQC.tsv',
+                     'Calb' = 'CA_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_woQC.tsv',
+                     'Ctro' = 'CT_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_woQC.tsv',
+                     'Dhan' = 'DH_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_woQC.tsv',
+                     'Wano' = 'WA_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_woQC.tsv',
+                     'Spom' = 'SP_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_woQC.tsv',
+                     'Kmar' = 'KM_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_woQC.tsv',
+                     'Zrou' = 'ZR_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_woQC.tsv',
+                     'Ppas' = 'PP_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_woQC.tsv',
+                     'Gcan' = 'GC_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_woQC.tsv'
+)
 
 
 
@@ -39,16 +49,16 @@ fc_combos = list('CN1_C2_2'= c('CN1_2', 'C2_2'),
 #Function for lower scatter plots to keep plot range the same for X and Y for all plots. 
 lowerfun <- function(data,mapping, pt_alpha, pt_size, plotrange){
   ggplot(data = data, mapping = mapping)+
-  geom_point(alpha=pt_alpha, size=pt_size) +
-  scale_x_continuous(limits = plotrange)+
-  scale_y_continuous(limits = plotrange)
+    geom_point(alpha=pt_alpha, size=pt_size) +
+    scale_x_continuous(limits = plotrange)+
+    scale_y_continuous(limits = plotrange)
 }
 
 #Function to pass plotrange parameters to distribution plots on the center diagonal.  
 diagfun <- function(data, mapping, plotrange){
   ggplot(data = data, mapping = mapping) +
-  geom_density(data=data, mapping=mapping) +
-  xlim(plotrange)
+    geom_density(data=data, mapping=mapping) +
+    xlim(plotrange)
 }
 
 #Extracts condition column names from long names (that include species name)
@@ -79,7 +89,7 @@ for (spec in specs) {
   #Replace NAs in other rows with minimum value of 90% of the minimum value in the rest of the data set. 
   narep = narep_pct_min*min(protein_data, na.rm=TRUE)
   narep_by_col = setNames(as.list(rep(narep, length(colnames(protein_data)))), colnames(protein_data))
-  protein_data = replace_na(protein_data, narep_by_col )
+  protein_data = tidyr::replace_na(protein_data, narep_by_col ) #needed to add tidyr::
   
   #Replace Inf with 105% of the maximum value in the rest of the data set
   infrep = infrep_pct_max * max(as.matrix(protein_data[is.finite(as.matrix(protein_data))]))
@@ -92,7 +102,7 @@ for (spec in specs) {
   #Rename columns to remove species and sample info
   new_cols = sapply(colnames(protein_data_log), col_xform)
   colnames(protein_data_log) = new_cols
-  protein_data_log = protein_data_log[, cond_order]
+  protein_data_log = protein_data_log[, intersect(cond_order, colnames(protein_data_log))]
   
   exp_list[[spec]] = protein_data_log
   
@@ -101,7 +111,7 @@ for (spec in specs) {
   p_exp = ggpairs(protein_data_log,
                   lower = list(continuous = wrap(lowerfun, pt_alpha=0.2, pt_size=1, plotrange=plotrange)),
                   diag = list(continuous = wrap(diagfun, plotrange = plotrange ))
-                  )
+  )
   
   p_exp = p_exp + labs(title= paste(spec, 'Log Expression'))
   show(p_exp)
@@ -118,26 +128,17 @@ for (spec in specs) {
   #make ggpairs plot of different LFC comparisons
   plotrange = c(-2,2)
   p_fc = ggpairs(protein_data_fc,
-                lower = list(continuous = wrap(lowerfun, pt_alpha=0.2, pt_size=1, plotrange=plotrange)),
-                diag = list(continuous = wrap(diagfun, plotrange = plotrange ))
-                )
+                 lower = list(continuous = wrap(lowerfun, pt_alpha=0.2, pt_size=1, plotrange=plotrange)),
+                 diag = list(continuous = wrap(diagfun, plotrange = plotrange ))
+  )
   
   p_fc = p_fc + labs(title=paste(spec,'Fold Change') )
   
   show(p_fc)
-
-  }
-
-
-
-#Save exp_list and fc_list as .csv files 
-
-for (spec in specs) {
-  write.csv(exp_list[[spec]], paste(working_dir, spec, '/exp_data_',spec,'.csv', sep=''))
-  write.csv(fc_list[[spec]], paste(working_dir, spec, '/LFC_data_',spec,'.csv', sep=''))
+  
 }
 
-
+#here warnings were popping up, and only some of the species produced plots
 
 #Calculate LFC
 
@@ -150,15 +151,15 @@ for (spec in specs) {
 #Start with 'CN1_C2_2'
 
 output_cond = 'CN1_C2_2'
-specA = 'Scer'
-specB = 'Zrou'
+specA = 'Scer-BY4741KI'
+specB = 'Scer'
 output_type = 'LFC'
 output_list = list('LFC'= fc_list, 'exp'=exp_list)
 
 outputA_all = output_list[[output_type]][[specA]] 
 outputB_all = output_list[[output_type]][[specB]] 
 
-#Load Ortholog Mapping
+#Load Ortholog Mapping (must change depending on comparing different species)
 orth_map = read.csv(file=paste(working_dir, 'ortholog_maps/', specB, '_', specA, '.csv', sep=''), header=TRUE, row.names=1 )  
 
 orth_map_source_genename = strsplit(orth_map$source_genename, '[|]')
@@ -221,7 +222,7 @@ write.table(scer_annotation_uniprot_na_genename_present, paste(working_dir, 'sce
 
 
 output_comb = data.frame()
-#colnames(orth_map_comb) = c('genename_B', 'LFC_B', 'genename_A', 'sc_orf','sc_name', 'LFC_A', 'orth_type')
+#colnames(orth_map_comb) = c('genename_B', 'LFC_B', 'genename_A', 'sc_orf', 'LFC_A', 'orth_type')
 
 for (orth_type in c('no_eggnog_orthologs','no_target_orthologs' )) {
   orth_map_type_subset = orth_map[which(orth_map$orth_type==orth_type),]
@@ -229,10 +230,9 @@ for (orth_type in c('no_eggnog_orthologs','no_target_orthologs' )) {
                                 LFC_B = outputB_all[orth_map_type_subset$source_genename_short, output_cond],
                                 genename_A = 'NONE', 
                                 sc_orf = 'NONE', 
-                                sc_name = 'NONE',
                                 LFC_A = 0, 
                                 orth_type = orth_type
-                                )
+  )
   
   output_comb = rbind(output_comb, output_comb_type)
 }
@@ -243,12 +243,10 @@ for (orth_type in c('one2one', 'no_target_orthologs', 'one2many', 'many2one', 'm
                                 LFC_B = outputB_all[orth_map_type_subset$source_genename_short, output_cond],
                                 orth_type = orth_type, 
                                 sc_orf = orth_map_type_subset$target_genename, 
-                                sc_name = 'NONE',
                                 LFC_A = NA
   )
   
   #output_comb_type$genename_A = scer_annotation[orth_map_type_subset$target_genename, c('gene_name')]  #If data is mapped to genename
-  output_comb_type$sc_name = scer_annotation[orth_map_type_subset$target_genename, c('Entry.name')]     #If data is mapped to uniprot id
   output_comb_type$genename_A = scer_annotation[orth_map_type_subset$target_genename, c('uniprot_id')]  #If data is mapped to uniprot id
   
   output_comb_type$LFC_A = outputA_all[output_comb_type$genename_A,output_cond]
@@ -278,12 +276,10 @@ output_comb_type$sc_orf = scer_annotation_rlookup[output_comb_type$genename_A,"s
 output_comb_type$sc_name = scer_annotation_rlookup[output_comb_type$genename_A,"Entry.name"]
 output_comb = rbind(output_comb, output_comb_type)
 
-
-
 #plot scatter plots using Plotly 
-lfc_scatter = ggplot(data=output_comb, aes(x=LFC_A, y=LFC_B, color=orth_type, text = paste(specA, ' name: ', genename_A, '\n', specB, ' name: ', genename_B, '\n Scer name: ', sc_name, sep='')))  +   #key=genename_A
-              geom_point(alpha=0.2)+
-              labs(x=specA, y=specB, title=output_cond)
+lfc_scatter = ggplot(data=output_comb, aes(x=LFC_A, y=LFC_B, color=orth_type, text = paste(specA, ' name: ', genename_A, '\n', specB, ' name: ', genename_B, sep='')))  +   #key=genename_A
+  geom_point(alpha=0.2)+
+  labs(x=specA, y=specB, title=output_cond)
 
 ggplotly(lfc_scatter)
 #ggplotly(lfc_scatter,source = "select", tooltip = c("key"))
@@ -292,4 +288,3 @@ ggplotly(lfc_scatter)
 #summary(output_comb)
 table(factor(output_comb$orth_type))
 #table(factor(output_comb_type$orth_type))
-
