@@ -130,6 +130,15 @@ for (spec in specs) {
 
 
 
+#Save exp_list and fc_list as .csv files 
+
+for (spec in specs) {
+  write.csv(exp_list[[spec]], paste(working_dir, spec, '/exp_data_',spec,'.csv', sep=''))
+  write.csv(fc_list[[spec]], paste(working_dir, spec, '/LFC_data_',spec,'.csv', sep=''))
+}
+
+
+
 #Calculate LFC
 
 
@@ -212,7 +221,7 @@ write.table(scer_annotation_uniprot_na_genename_present, paste(working_dir, 'sce
 
 
 output_comb = data.frame()
-#colnames(orth_map_comb) = c('genename_B', 'LFC_B', 'genename_A', 'sc_orf', 'LFC_A', 'orth_type')
+#colnames(orth_map_comb) = c('genename_B', 'LFC_B', 'genename_A', 'sc_orf','sc_name', 'LFC_A', 'orth_type')
 
 for (orth_type in c('no_eggnog_orthologs','no_target_orthologs' )) {
   orth_map_type_subset = orth_map[which(orth_map$orth_type==orth_type),]
@@ -220,6 +229,7 @@ for (orth_type in c('no_eggnog_orthologs','no_target_orthologs' )) {
                                 LFC_B = outputB_all[orth_map_type_subset$source_genename_short, output_cond],
                                 genename_A = 'NONE', 
                                 sc_orf = 'NONE', 
+                                sc_name = 'NONE',
                                 LFC_A = 0, 
                                 orth_type = orth_type
                                 )
@@ -233,10 +243,12 @@ for (orth_type in c('one2one', 'no_target_orthologs', 'one2many', 'many2one', 'm
                                 LFC_B = outputB_all[orth_map_type_subset$source_genename_short, output_cond],
                                 orth_type = orth_type, 
                                 sc_orf = orth_map_type_subset$target_genename, 
+                                sc_name = 'NONE',
                                 LFC_A = NA
   )
   
   #output_comb_type$genename_A = scer_annotation[orth_map_type_subset$target_genename, c('gene_name')]  #If data is mapped to genename
+  output_comb_type$sc_name = scer_annotation[orth_map_type_subset$target_genename, c('Entry.name')]     #If data is mapped to uniprot id
   output_comb_type$genename_A = scer_annotation[orth_map_type_subset$target_genename, c('uniprot_id')]  #If data is mapped to uniprot id
   
   output_comb_type$LFC_A = outputA_all[output_comb_type$genename_A,output_cond]
@@ -263,12 +275,13 @@ scer_annotation_rlookup = scer_annotation_rlookup[which(!(is.na(scer_annotation_
 rownames(scer_annotation_rlookup) = scer_annotation_rlookup$gene_name
 
 output_comb_type$sc_orf = scer_annotation_rlookup[output_comb_type$genename_A,"systematic_name"]
+output_comb_type$sc_name = scer_annotation_rlookup[output_comb_type$genename_A,"Entry.name"]
 output_comb = rbind(output_comb, output_comb_type)
 
 
 
 #plot scatter plots using Plotly 
-lfc_scatter = ggplot(data=output_comb, aes(x=LFC_A, y=LFC_B, color=orth_type, text = paste(specA, ' name: ', genename_A, '\n', specB, ' name: ', genename_B, sep='')))  +   #key=genename_A
+lfc_scatter = ggplot(data=output_comb, aes(x=LFC_A, y=LFC_B, color=orth_type, text = paste(specA, ' name: ', genename_A, '\n', specB, ' name: ', genename_B, '\n Scer name: ', sc_name, sep='')))  +   #key=genename_A
               geom_point(alpha=0.2)+
               labs(x=specA, y=specB, title=output_cond)
 
