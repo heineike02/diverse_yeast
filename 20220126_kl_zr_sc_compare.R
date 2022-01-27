@@ -11,9 +11,14 @@ sc_pka_inh = read.csv(file=paste(base_dir, 'external_data/pka_inhibition/2018101
 
 pka_act = sc_pka_inh[which(sc_pka_inh$log2FoldChange>2.0 & sc_pka_inh$padj< 0.001),]
 pka_rep = sc_pka_inh[which( (sc_pka_inh$log2FoldChange< (-2.0)) & (sc_pka_inh$padj< 0.001)),]
-#  Gal Pathway
+#  Gal Pathway 
+# Main genes upregulated in S.cer from Dalal et al 2016
+#P04385, GAL1_YEAST, YBR020W
+#P04397, GAL10_YEAST, YBR019C 
+#P08431, GAL7_YEAST, YBR018C 
+#P13181, GAL2_YEAST, YLR081W 
 
-
+sc_gal_list = c('P04385', 'P04397', 'P08431', 'P13181')
 
 
 
@@ -155,9 +160,13 @@ output_comb$pka_act[which(output_comb$sc_orf %in% intersect(output_comb$sc_orf, 
 output_comb$pka_rep= FALSE
 output_comb$pka_rep[which(output_comb$sc_orf %in% intersect(output_comb$sc_orf, rownames(pka_rep)))] = TRUE
 
+output_comb$sc_gal = FALSE
+output_comb$sc_gal[which(output_comb$genename_A %in% intersect(output_comb$genename_A, sc_gal_list))] = TRUE
+
+
 #color=orth_type
 #plot scatter plots using Plotly 
-lfc_scatter = ggplot(data=output_comb, aes(x=LFC_A, y=LFC_B, color=pka_rep, text = paste(specA, ' name: ', genename_A, '\n', specB, ' name: ', genename_B, '\n Scer name: ', sc_name, sep='')))  +   #key=genename_A
+lfc_scatter = ggplot(data=output_comb, aes(x=LFC_A, y=LFC_B, color=sc_gal, text = paste(specA, ' name: ', genename_A, '\n', specB, ' name: ', genename_B, '\n Scer name: ', sc_name, sep='')))  +   #key=genename_A
   geom_point(alpha=0.2)+
   labs(x=specA, y=specB, title=output_cond)
 
