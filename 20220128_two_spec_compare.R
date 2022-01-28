@@ -10,7 +10,7 @@ working_dir = paste(base_dir, 'diverse_strains/processed_data/', sep='' )
 #Compare LFC across species using ortholog mapping
 
 output_cond = 'CN1_C2_2'
-specA = 'Zrou'
+specA = 'Klac'
 specB = 'Scer'
 
 
@@ -50,6 +50,16 @@ scer_annotation_uniprot_na_genename_present = scer_annotation_uniprot_na[which(!
 
 #  Currently only set up to compare LFC (log fold change) since expression in proteomics experiments is relative so that is very hard to interpret.  
 
+#Function to parse long name (used in uniprot annotation file and ortholog map) to get identifier for data.
+# Example:  for sp|P05467|YKP1_KLULA, extracts P05467
+
+orth_map_name_parse = function(name_split) {
+  #name_out = strsplit(name_split[3], '_')[[1]][1] #in our example this would extract YKP1
+  name_out = name_split[2]
+  return(name_out)
+}
+
+
 spec_compare = function(output_cond, specA, specB= 'Scer', annotation_df, working_dir) {
   #Function inputs:  
   #  output_cond:  Output condition that is being compared - must be in the columns of the output file
@@ -65,6 +75,7 @@ spec_compare = function(output_cond, specA, specB= 'Scer', annotation_df, workin
   #   sc_orf:  systematic name for S. cerevisiae.  Required for ortholog mapping when specB is S. cerevisiae
   #   sc_name:  Standard name for S. cerevisiae genes.  More easily interpreted.   
 
+  #annotation_df = scer_annotation
   
   outputA_all = read.csv(file=paste(working_dir , specA, '/LFC_data_',specA,'.csv', sep=''), header=TRUE, row.names=1) #output_list[[output_type]][[specA]] 
  
@@ -82,19 +93,14 @@ spec_compare = function(output_cond, specA, specB= 'Scer', annotation_df, workin
   
   orth_map_source_genename = strsplit(orth_map$source_genename, '[|]')
   
-  
-  orth_map_name_parse = function(name_split) {
-    name_out = strsplit(name_split[3], '_')[[1]][1]
-    return(name_out)
-  }
-  
   orth_map_source_new_names = sapply(orth_map_source_genename, orth_map_name_parse)
   
   orth_map$source_genename_short = orth_map_source_new_names
   
   #Check all output genes are included in ortholog map
-  if (nrow(outputB_all) != length(intersect(rownames(outputB_all), orth_map$source_genename_short))) {
-    warning('Some outputs not present in ortholog map')
+  missing_from_orthmap = setdiff(rownames(outputA_all), orth_map$source_genename_short)
+  if (length(missing_from_orthmap>0)) {
+    warning(paste(length(missing_from_orthmap)), ' genes missing from ortholog map for ', specA, sep='')
   }
   
   output_comb = data.frame()
@@ -167,7 +173,7 @@ output_comb = spec_compare(output_cond = output_cond, specA = specA, specB= spec
 
 
 
-vis_option = 'orth_type'
+vis_option = 'sc_gal'
 
 #Possible vis options: 
 #orth_type:  Ortholog type 
@@ -184,7 +190,7 @@ vis_option = 'orth_type'
 sc_gal_list = c('P04385', 'P04397', 'P08431', 'P13181')
 
 output_comb$sc_gal = FALSE
-output_comb$sc_gal[which(output_comb$genename_A %in% intersect(output_comb$genename_A, sc_gal_list))] = TRUE
+output_comb$sc_gal[which(output_comb$genename_B %in% intersect(output_comb$genename_B, sc_gal_list))] = TRUE
 
 
 #  PKA genes
@@ -214,7 +220,7 @@ lfc_scatter = ggplot(data=output_comb, aes(x=LFC_A, y=LFC_B, color=get(vis_optio
 lfc_scatter$labels$colour = vis_option
 
 ggplotly(lfc_scatter, tooltip=c('x','y','text'))
-#ggplotly(lfc_scatter,source = "select", tooltip = c("key"))
+a#ggplotly(lfc_scatter,source = "select", tooltip = c("key"))
 
 
 #summary(output_comb)
