@@ -2,12 +2,18 @@ library(ggplot2)
 library(GGally)
 library(plotly)
 
-working_dir = "~/OneDrive - Charité - Universitätsmedizin Berlin/R_analysis/Proteomics/processed_data/"
+#Remember to uncomment the appropriate working dir
+#working_dir = "~/OneDrive - Charité - Universitätsmedizin Berlin/R_analysis/Proteomics/processed_data/"
+working_dir = "/camp/home/heineib/working/Ben/diverse_strains/processed_data/"
 
-specs = c('Scer-BY4741KI', 'Scer', 'Klac', 'Lthe', 'Calb', 'Ctro', 'Dhan', 'Wano', 'Spom', 'Kmar', 'Zrou', 'Ppas', 'Gcan')
+make_pairplots = FALSE   #Flag to produce pairplots for each species
+save_species_data = TRUE #Flag to save 
+
+specs = c('Scer-BY4741KI', 'Scer', 'Klac', 'Lthe', 'Calb', 'Ctro', 'Dhan', 'Wano', 'Spom', 'Kmar', 'Zrou', 'Kpas', 'Gcan')
 
 #This might not be needed
-spec4_to_spec2 = c('Scer-BY4741KI'='BY', 'Scer'='SC', 'Klac'='KL', 'Lthe'='LT', 'Calb'='CA', 'Ctro'='CT', 'Dhan'='DH', 'Wano'='WA', 'Spom'='SP', 'Kmar'='KM', 'Zrou'='ZR', 'Ppas'='PP', 'Gcan'='GC')
+spec4_to_spec2 = c('Scer-BY4741KI'='BY', 'Scer'='SC', 'Klac'='KL', 'Lthe'='LT', 'Calb'='CA', 'Ctro'='CT', 'Dhan'='DH', 'Wano'='WA', 'Spom'='SP', 'Kmar'='KM', 'Zrou'='ZR', 'Kpas'='PP', 'Gcan'='GC')
+#The current species name for picchia pastoris is Komatagella pastoris, so I think we should use that for the 3 letter code.
 
 #For the s. cerevisiae data it was saved as an R. File.  Opened it and then Saved it as a .tsv using
 #write.table(proteinWide_woQC, paste(working_dir, spec, '/','BY_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_ProteinIds_woQC.tsv', sep=''))
@@ -24,7 +30,7 @@ spec_data_fnames = c('Scer-BY4741KI' = 'BY_ProteinWide_BatchCorrected_SF0MinPrec
                      'Spom' = 'SP_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_woQC.tsv',
                      'Kmar' = 'KM_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_woQC.tsv',
                      'Zrou' = 'ZR_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_woQC.tsv',
-                     'Ppas' = 'PP_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_woQC.tsv',
+                     'Kpas' = 'PP_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_woQC.tsv',
                      'Gcan' = 'GC_ProteinWide_BatchCorrected_SF0MinPrecNum3_Stringent_woQC.tsv'
 )
 
@@ -107,184 +113,51 @@ for (spec in specs) {
   exp_list[[spec]] = protein_data_log
   
   #make ggpairs plot
-  plotrange = c(2.5,7)
-  p_exp = ggpairs(protein_data_log,
+  if (make_pairplots) {
+    plotrange = c(2.5,7)
+    p_exp = ggpairs(protein_data_log,
                   lower = list(continuous = wrap(lowerfun, pt_alpha=0.2, pt_size=1, plotrange=plotrange)),
                   diag = list(continuous = wrap(diagfun, plotrange = plotrange ))
   )
-  
-  p_exp = p_exp + labs(title= paste(spec, 'Log Expression'))
-  show(p_exp)
+    p_exp = p_exp + labs(title= paste(spec, 'Log Expression'))
+    show(p_exp)
+  }
   
   #Calculate LFC
   
   protein_data_fc = data.frame(row.names=rownames(protein_data_log))
   for (fc_combo in names(fc_combos)) {
-    protein_data_fc[fc_combo]=protein_data_log[fc_combos[[fc_combo]][2]]-protein_data_log[fc_combos[[fc_combo]][1]]
+    if (!(length(intersect(fc_combos[[fc_combo]], colnames(protein_data_log)))==2)) {
+      print(paste('One or both conditions from ', fc_combo, ' not present in data.  Species: ', spec))
+    } else {
+      protein_data_fc[fc_combo]=protein_data_log[fc_combos[[fc_combo]][2]]-protein_data_log[fc_combos[[fc_combo]][1]]
+    }
   }
   
   fc_list[[spec]] = protein_data_fc
   
   #make ggpairs plot of different LFC comparisons
-  plotrange = c(-2,2)
-  p_fc = ggpairs(protein_data_fc,
+  if (make_pairplots) {
+    plotrange = c(-2,2)
+    p_fc = ggpairs(protein_data_fc,
                  lower = list(continuous = wrap(lowerfun, pt_alpha=0.2, pt_size=1, plotrange=plotrange)),
                  diag = list(continuous = wrap(diagfun, plotrange = plotrange ))
   )
   
-  p_fc = p_fc + labs(title=paste(spec,'Fold Change') )
+    p_fc = p_fc + labs(title=paste(spec,'Fold Change') )
   
-  show(p_fc)
+    show(p_fc)
+  }
   
 }
 
 #here warnings were popping up, and only some of the species produced plots
 
-#Calculate LFC
-
-
-#make ggpairs plot of different LFC comparisons
-
-
-#Compare different LFC comparisons across species using ortholog mapping
-
-#Start with 'CN1_C2_2'
-
-output_cond = 'CN1_C2_2'
-specA = 'Scer-BY4741KI'
-specB = 'Scer'
-output_type = 'LFC'
-output_list = list('LFC'= fc_list, 'exp'=exp_list)
-
-outputA_all = output_list[[output_type]][[specA]] 
-outputB_all = output_list[[output_type]][[specB]] 
-
-#Load Ortholog Mapping (must change depending on comparing different species)
-orth_map = read.csv(file=paste(working_dir, 'ortholog_maps/', specB, '_', specA, '.csv', sep=''), header=TRUE, row.names=1 )  
-
-orth_map_source_genename = strsplit(orth_map$source_genename, '[|]')
-
-
-orth_map_name_parse = function(name_split) {
-  name_out = strsplit(name_split[3], '_')[[1]][1]
-  return(name_out)
+#Save expression and LFC data as .csv files
+if (save_species_data) {
+  for (spec in specs) {
+    write.csv(exp_list[[spec]], paste(working_dir, spec, '/exp_data_',spec,'.csv', sep=''))
+    write.csv(fc_list[[spec]], paste(working_dir, spec, '/LFC_data_',spec,'.csv', sep=''))
+  }
 }
 
-orth_map_source_new_names = sapply(orth_map_source_genename, orth_map_name_parse)
-
-orth_map$source_genename_short = orth_map_source_new_names
-
-#Check all output genes are included in ortholog map
-if (nrow(outputB_all) != length(intersect(rownames(outputB_all), orth_map$source_genename_short))) {
-  warning('Some outputs not present in ortholog map')
-}
-
-
-#Load Protein Annotation for S. cerevisiae and use it to map orf names onto S. cer data
-
-#saved annotations_proteins as a .tsv using data from 210318_annotation_tables.Rdata
-#write.table(annotations_proteins, paste(working_dir,'annotations_proteins.tsv', sep = ''))
-
-scer_annotation = read.delim(file=paste(working_dir, 'uniprot-proteome_UP000002311.tab', sep=''),sep='\t', header=TRUE)
-
-#Switched to uniprot annotation file because it was missing some assignments from uniprot gene name to uniprot ID
-#scer_annotation = read.table(file=paste(working_dir, 'annotations_proteins.tsv', sep=''), header=TRUE)
-
-#renames columns to match original scer_annotation columns
-scer_annotation = rename(scer_annotation, c('uniprot_id'='Entry', 'systematic_name'='Gene.names...ordered.locus..'))
-
-print("List of Uniprot IDs present in the data that are not in the annotation file:")
-print(setdiff(rownames(fc_list[['Scer']]), scer_annotation$uniprot_id))
-
-rownames(scer_annotation) = scer_annotation$systematic_name
-
-
-#Code for old annotation_proteins.tsv file.  
-#
-#rownames(scer_annotation) = scer_annotation$systematic_name
-
-
-#Assess items in the annotation file that have duplicate uniprot ids and are NA for uniprot ID, but have a genename assigned.
-uniprot_split = strsplit(scer_annotation$uniprot_id, ',')
-uniprot_lengths = lapply(uniprot_split,length)
-scer_annotation_uniprot_doubles = scer_annotation[which(uniprot_lengths==2),]
-scer_annotation_uniprot_na = scer_annotation[which(is.na(scer_annotation$uniprot_id)),]
-scer_annotation_uniprot_na_genename_present = scer_annotation_uniprot_na[which(!is.na(scer_annotation_uniprot_na$gene_name)),]
-write.table(scer_annotation_uniprot_doubles, paste(working_dir, 'scer_duplicate_uniprot_ids.tsv', sep=''))
-write.table(scer_annotation_uniprot_na_genename_present, paste(working_dir, 'scer_uniprot_na_genename_present.tsv', sep=''))
-
-
-#The New Uniprot id mapping doesn't have the double uniprot names listed and doesn't have NAs for Uniprot when a genename is present. 
-
-#There's no way we could recover data for the genes that have NA for Uniprot but data linked to genename - I assume DIANN throws those out
-#Not sure how diann deals with duplicate uniprot ids
-
-
-
-output_comb = data.frame()
-#colnames(orth_map_comb) = c('genename_B', 'LFC_B', 'genename_A', 'sc_orf', 'LFC_A', 'orth_type')
-
-for (orth_type in c('no_eggnog_orthologs','no_target_orthologs' )) {
-  orth_map_type_subset = orth_map[which(orth_map$orth_type==orth_type),]
-  output_comb_type = data.frame(genename_B = orth_map_type_subset$source_genename_short, 
-                                LFC_B = outputB_all[orth_map_type_subset$source_genename_short, output_cond],
-                                genename_A = 'NONE', 
-                                sc_orf = 'NONE', 
-                                LFC_A = 0, 
-                                orth_type = orth_type
-  )
-  
-  output_comb = rbind(output_comb, output_comb_type)
-}
-
-for (orth_type in c('one2one', 'no_target_orthologs', 'one2many', 'many2one', 'many2many')) {
-  orth_map_type_subset = orth_map[which(orth_map$orth_type==orth_type),]
-  output_comb_type = data.frame(genename_B = orth_map_type_subset$source_genename_short, 
-                                LFC_B = outputB_all[orth_map_type_subset$source_genename_short, output_cond],
-                                orth_type = orth_type, 
-                                sc_orf = orth_map_type_subset$target_genename, 
-                                LFC_A = NA
-  )
-  
-  #output_comb_type$genename_A = scer_annotation[orth_map_type_subset$target_genename, c('gene_name')]  #If data is mapped to genename
-  output_comb_type$genename_A = scer_annotation[orth_map_type_subset$target_genename, c('uniprot_id')]  #If data is mapped to uniprot id
-  
-  output_comb_type$LFC_A = outputA_all[output_comb_type$genename_A,output_cond]
-  
-  #Some s.cer orf names do not map to a protein name on the annotation file.  Set those values to 0.  
-  no_protein_name_for_orf = which(is.na(output_comb_type$genename_A))
-  output_comb_type$orth_type[no_protein_name_for_orf] = 'no_protein_name_for_orf'
-  output_comb_type$LFC_A[no_protein_name_for_orf] = 0
-  
-  output_comb = rbind(output_comb, output_comb_type)
-}
-
-
-#Set expression values for all genes present in S. cer but not in other species
-output_comb_type = data.frame(genename_A=setdiff(rownames(outputA_all), output_comb$genename_A), 
-                              genename_B='NONE', 
-                              LFC_B = 0, 
-                              orth_type = 'Scer_only')
-
-output_comb_type$LFC_A = outputA_all[output_comb_type$genename_A, output_cond]
-
-scer_annotation_rlookup = scer_annotation
-scer_annotation_rlookup = scer_annotation_rlookup[which(!(is.na(scer_annotation_rlookup$gene_name))),]
-rownames(scer_annotation_rlookup) = scer_annotation_rlookup$gene_name
-
-output_comb_type$sc_orf = scer_annotation_rlookup[output_comb_type$genename_A,"systematic_name"]
-output_comb_type$sc_name = scer_annotation_rlookup[output_comb_type$genename_A,"Entry.name"]
-output_comb = rbind(output_comb, output_comb_type)
-
-#plot scatter plots using Plotly 
-lfc_scatter = ggplot(data=output_comb, aes(x=LFC_A, y=LFC_B, color=orth_type, text = paste(specA, ' name: ', genename_A, '\n', specB, ' name: ', genename_B, sep='')))  +   #key=genename_A
-  geom_point(alpha=0.2)+
-  labs(x=specA, y=specB, title=output_cond)
-
-ggplotly(lfc_scatter)
-#ggplotly(lfc_scatter,source = "select", tooltip = c("key"))
-
-
-#summary(output_comb)
-table(factor(output_comb$orth_type))
-#table(factor(output_comb_type$orth_type))
