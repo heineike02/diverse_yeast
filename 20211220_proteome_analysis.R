@@ -2,7 +2,12 @@ library(ggplot2)
 library(GGally)
 library(plotly)
 
+
+
+#Remember to uncomment the appropriate working dir
 working_dir = "~/OneDrive - Charité - Universitätsmedizin Berlin/R_analysis/Proteomics/processed_data/"
+#working_dir = "/camp/home/heineib/working/Ben/diverse_strains/processed_data/"
+
 
 specs = c('Scer-BY4741KI', 'Scer', 'Klac', 'Lthe', 'Calb', 'Ctro', 'Dhan', 'Wano', 'Spom', 'Kmar', 'Zrou', 'Ppas', 'Gcan')
 
