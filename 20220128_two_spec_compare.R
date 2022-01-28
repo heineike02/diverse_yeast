@@ -5,7 +5,7 @@
 #working_dir = paste(base_dir, 'diverse_strains/processed_data/', sep='' )
 working_dir = "~/OneDrive - Charité - Universitätsmedizin Berlin/R_analysis/Proteomics/processed_data/"
 
-
+#adding this for shits and giggles to test my understanding of Github workflow
 
 #Compare LFC across species using ortholog mapping
 
