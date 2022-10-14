@@ -1,0 +1,22 @@
+Single_letter	Full_name	Three_letter	Three_letter_caps
+G	Glycine	Gly	GLY
+A	Alanine	Ala	ALA
+L	Leucine	Leu	LEU
+M	Methionine	Met	MET
+F	Phenylalanine	Phe	PHE
+W	Tryptophan	Trp	TRP
+K	Lysine	Lys	LYS
+Q	Glutamine	Gln	GLN
+E	Glutamic Acid	Glu	GLU
+S	Serine	Ser	SER
+P	Proline	Pro	PRO
+V	Valine	Val	VAL
+I	Isoleucine	Ile	ILE
+C	Cysteine	Cys	CYS
+Y	Tyrosine	Tyr	TYR
+H	Histidine	His	HIS
+R	Arginine	Arg	ARG
+N	Asparagine	Asn	ASN
+D	Aspartic Acid	Asp	ASP
+T	Threonine	Thr	THR
+-	Unaligned	Xyz	XYZ

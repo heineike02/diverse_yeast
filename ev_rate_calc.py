@@ -1,11 +1,23 @@
 import json
 import sys
 import os
+import subprocess
 
 #begin by activating source: 
 #source /home/heineike/.venv_biokit/bin/activate
 
 #Input: list of OGs, (?parameters for codeML), specific protein ids to remove (as .json), suffix for calculation (defoult '')
+# #og_input = {'OG1299': {'name': 'CDC19_PYK2',
+#                           'genes_to_rm': ['0_2015']
+#                          },
+#                'OG1355': {'name': 'ERG11',
+#                           'genes_to_rm': ['0_2015']
+#                          },
+#                'OG1390': {'name': 'STR2_HSU1',
+#                           'genes_to_rm': ['0_2015']
+#                          }
+#               }
+
 #Output: CodeML calculations for each OG
 
 ##eventually use sys.argv to have command line input
@@ -73,9 +85,34 @@ with open(fasta_short,'r') as f_in:
                 f_out.write(line)
 
 #converts fasta to PHYLIP format 
+phy = og_dir + os.sep + og + '_aln.phy'
+biokit_cmd = ['biokit','file_format_converter',
+              '-i',fasta_filt, '-iff', 'fasta',
+              '-o', phy,
+              '-off', 'phylip']
+              
+subprocess.run(biokit_cmd)
+
 #adds I in phylip to indicate interleaved status
+phy = og_dir + os.sep + og + '_aln.phy'
+phy_codeML = og_dir + os.sep + og + '_codeML_aln.phy'
+
+with open(phy,'r') as f_in:
+    with open(phy_codeML,'w') as f_out: 
+        line = next(f_in)
+        line_out = line + ' I'
+        f_out.write(line_out)
+        for line in f_in:
+            f_out.write(line_out)
+
 
 #Load Tree
+
+
+
+with open(base_dir + os.sep + os.path.normpath('alphafold/selection_calculations/20220526_og_input.json'), 'w') as og_input_f: 
+    og_input = json.dump(og_input, fp = og_input_f)
+
 #fix names
 #Saves in new directory
 
