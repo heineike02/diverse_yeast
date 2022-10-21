@@ -1,0 +1,11 @@
+#!/bin/bash
+fname_base=/mnt/g/My\ Drive/Crick_LMS/external_data/genomes/diverse_strains/ena/
+
+for fname_in wickerhamomyces_anomalus/GCA_001661255.1.embl two.embl
+
+do
+  fname_in_full={$fname_base}fname_in
+  echo fname_in_full
+ done
+  
+  

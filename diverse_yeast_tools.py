@@ -9,6 +9,28 @@ divyeast_dir = os.path.normpath('C:/Users/heineib/Documents/GitHub/diverse_yeast
 y1000plus_dir = os.path.normpath('C:/Users/heineib/Documents/GitHub/y1000plus_tools/data') + os.sep
 genomes_dir = os.path.normpath('G:/My Drive/Crick_LMS/external_data/genomes')
 
+
+#Function to parse sequence id from first line of fasta file in either shen or uniprot proteomes. 
+
+def gene_id_shen(seq_record):
+    gene_id = seq_record.description.split()[1].split('=')[1]
+    return gene_id
+    
+def gene_id_uniprot(seq_record):
+    gene_id = seq_record.description.split()[0]
+    return gene_id
+
+gene_id_function_dict = {
+    "shen": gene_id_shen,
+    "uniprot": gene_id_uniprot
+}
+
+def gene_id_retrieve(study, seq_record):
+    gene_id = gene_id_function_dict[study](seq_record)
+    
+    return(gene_id)
+
+
 def seq_record_fasta_printout(seq_records, f_out, gene_full_set, seqs_to_get, proteome_source, spec_orig_genome):
     
     for seq_record in seq_records:
@@ -31,7 +53,7 @@ def seq_record_fasta_printout(seq_records, f_out, gene_full_set, seqs_to_get, pr
                         ' sim_score_vs_shen_diff={:0.1f}'.format(diff_top2_val) + '\n')
             f_out.write(str(protein_seq) + '\n')  #I wonder why some of the bases were in lower case
 
-def fasta_extract_shen(f, protein_dir, spec_orig_genome, y1000plus_dir, og_out_data):  
+def fasta_extract_shen(f_out, protein_dir, spec_orig_genome, y1000plus_dir, og_out_data, spec_id):  
     
     source = 'shen'
     sim_score_vs_shen = 'NA'
