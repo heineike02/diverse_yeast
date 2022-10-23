@@ -207,3 +207,11 @@ def load_model_gene_id_2_swissprot_id():
     gene_id_2_swissprot_id['Spom'] = dict(zip(spom_gene_id_2_swissprot_id_df[0], spom_gene_id_2_swissprot_id_df[1]))
     
     return gene_id_2_swissprot_id
+
+def seq_squeeze(seq_in):
+    seq_out = ''
+    for res in seq_in:
+        if res!= '-':
+            seq_out = seq_out + res
+    
+    return seq_out
