@@ -151,6 +151,41 @@ def load_model_gene_id_2_y1000_id():
     calb_lookup = pd.read_csv(calb_lookup_fname, index_col=0)
     gene_id_2_y1000_id['Calb'] = dict(zip(calb_lookup.index,calb_lookup['y1000_id']))
 
+    #Spom is difficult because the y1000 id map goes from gene names rather than systematic ids and many of the gene names are synonyms rather than the official names
+    #Load S.pom lookup table: 
+    spom_lookup_fname = y1000plus_dir + os.path.normpath('y1000plus_tools_data/y1000plus/id_lookups/schizosaccharomyces_pombe.csv')
+    spom_lookup = pd.read_csv(spom_lookup_fname, index_col=0)
+    spom_gene_ids = pd.read_table(genomes_dir + os.sep + os.path.normpath('schizosaccharomyces_pombe/gene_IDs_names_products.tsv'), header=None)
+    gene_full_2_y1000_id = dict(zip(spom_lookup['gene_full'],spom_lookup['y1000_id']))
+    spom_name_2_systematic_id = dict(zip(spom_gene_ids[2],spom_gene_ids[0]))
+
+    #map synonyms
+    syn_map_2_name = {}
+    syn_map_2_systematic_id = {}
+    for syn_ids, name, systematic_id in zip(spom_gene_ids[7], spom_gene_ids[2], spom_gene_ids[0]): 
+        if not(pd.isna(syn_ids)): 
+            syn_ids_split = syn_ids.split(',')
+
+            for syn_id in syn_ids_split: 
+                syn_map_2_name[syn_id] = name
+                syn_map_2_systematic_id[syn_id] = systematic_id
+
+    gene_id_2_y1000_id['Spom'] = {}
+    for gene_full, y1000_id in gene_full_2_y1000_id.items():
+        if gene_full in set(spom_gene_ids[0]): #gene_full is a systematic id
+            gene_id_2_y1000_id['Spom'][gene_full] = y1000_id
+        elif gene_full in spom_name_2_systematic_id.keys(): 
+            systematic_id = spom_name_2_systematic_id[gene_full]
+            gene_id_2_y1000_id['Spom'][systematic_id] = y1000_id
+        elif gene_full in syn_map_2_systematic_id.keys(): 
+            #print('Exception gene for pombe: ' + gene_full)
+            systematic_id = syn_map_2_systematic_id[gene_full]
+            if (spom_name_2_systematic_id[syn_map_2_name[gene_full]]!=systematic_id): 
+                print('gene_full not mapping to name that maps to systematic id ' + gene_full + ' systematic_id=' + systematic_id)
+            gene_id_2_y1000_id['Spom'][systematic_id] = y1000_id
+        else: 
+            print('Spom: No official name, systematic_id or synonym for ' + gene_full + ' y1000_id=' + y1000_id)
+
     return gene_id_2_y1000_id
 
 def load_model_swissprot_id_2_gene_id():

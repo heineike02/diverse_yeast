@@ -1,0 +1,43 @@
+#!/bin/bash
+
+. /opt/conda/etc/profile.d/conda.sh
+conda activate diverse_yeast_env
+
+BASE_DIR=/home/heineike_wsl2/alphafold/
+BASE_YN00=${BASE_DIR}selection_calculations/yn00/
+
+
+for OG_BASE in OG4150_REF_Scer_AF-P07256-F1-model_v2 OG2603_REF_Scer_AF-P50076-F1-model_v2 OG2845_REF_Scer_AF-P43577-F1-model_v2 OG3677_REF_Scer_AF-P47125-F1-model_v2 OG1299_REF_Scer_AF-P00549-F1-model_v2
+do 
+    #Make directory
+    CALC_DIR=${BASE_YN00}${OG_BASE}/
+        
+    mkdir $CALC_DIR
+    
+    #Change into directory and call codeML
+    cd $CALC_DIR
+
+    # Copy in tree
+    cp ${BASE_DIR}msas/structural/tm_align/trees/${OG_BASE}.tm.fasta.clipkit.treefile.renamed ${CALC_DIR}tree.treefile
+    
+    # Copy in phy
+    cp ${BASE_DIR}msas/structural/tm_align/cds_trim_strict/${OG_BASE}.tm.fasta.clipkit.cds.renamed.codeML.phy ${CALC_DIR}aln.phy
+    
+    # Copy in control file
+    cp ${BASE_YN00}yn00.ctl ${CALC_DIR}yn00.ctl
+    
+    # Run codeML
+    /var/lib/paml/paml-4.10.6/bin/yn00 ${CALC_DIR}yn00.ctl
+
+
+    # remove data
+    # for now skipping it
+    # paml_results_out = base_dir + os.sep + os.path.normpath('selection_calculations/yn00/' + og_base + '.yn00.out')
+    # shutil.copy(calc_dir + og_base + '.yn00.out', paml_results_out)
+
+
+    #python /home/heineike_wsl2/github_s/diverse_yeast/20221206_struct_align_yn00.py
+
+
+
+done
