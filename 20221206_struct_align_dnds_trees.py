@@ -28,15 +28,15 @@ selected_og_refs = [fname.split('.')[0] for fname in align_files]
 #os.path.normpath('/home/heineike_wsl2/Crick_LMS/projects/diverse_yeasts/alphafold')
 # output_dir = base_dir + os.sep + os.path.normpath('selection_calculations/20220526_sel_calc')
 
-#selected_ogs = ['OG4150', 'OG2603', 'OG3677', 'OG2845']
+#selected_ogs = ['OG2645'] #'OG4150', 'OG2603', 'OG3677', 'OG2845']
 
-#selected_ogs = ['OG4150_REF_Scer_AF-P07256-F1-model_v2', 'OG2603_REF_Scer_AF-P50076-F1-model_v2', 'OG2845_REF_Scer_AF-P43577-F1-model_v2', 'OG3677_REF_Scer_AF-P47125-F1-model_v2', 'OG1299_REF_Scer_AF-P00549-F1-model_v2']
+selected_og_refs = ['OG4150_REF_Scer_AF-P07256-F1-model_v2', 'OG2603_REF_Scer_AF-P50076-F1-model_v2', 'OG2845_REF_Scer_AF-P43577-F1-model_v2', 'OG3677_REF_Scer_AF-P47125-F1-model_v2', 'OG1299_REF_Scer_AF-P00549-F1-model_v2']
 
 for og_ref in selected_og_refs: 
     print(og_ref)
     #og_ref = 'OG4150_REF_Scer_AF-P07256-F1-model_v2'
     og,ref = og_ref.split('_REF_')
-    og_pep_msa_fname = aln_dir + os.sep + og_ref + '.tm.fasta')
+    og_pep_msa_fname = aln_dir + os.sep + og_ref + '.tm.fasta'
 
     #trim alignment with default settings and outputs log file
     clipkit_cmd = ['clipkit', og_pep_msa_fname, '-l']
@@ -59,7 +59,7 @@ for og_ref in selected_og_refs:
     # also should run with outgroop of pombe to root tree
     iqtree_command = ["iqtree", 
                       "-s" , og_pep_msa_fname_trimmed ,
-                      "-m", 'LG+I+G4',  #'MF', #only runs model finder 
+                      #"-m", 'LG+I+G4',  #'MF', #only runs model finder 
                       "-nt", "AUTO",  #automatically determines number of threads 
                       #"-o", 'Spom_AF-Q10208-F1-model_v2'  #Outgroup for rooting should be pombe  for now using default. 
                      ]
