@@ -10,8 +10,6 @@
 #  Strictly trimmed protein alignment and codon alignment (used as input for codemL)
 #  Phylip file used as input for Codon alignment. 
 
-
-
 #import sys
 import os
 import subprocess
@@ -19,7 +17,9 @@ from Bio import SeqIO
 import pandas as pd
 import shutil
 
-base_dir = os.path.normpath('/home/heineike_wsl2/alphafold')
+base_dir = os.path.normpath('~/alphafold')
+#os.path.normpath('/home/heineike_wsl2/alphafold') #Ben's computer
+
 aln_dir = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/fasta_renamed') 
                                      
 align_files = os.listdir(aln_dir)
@@ -30,7 +30,7 @@ selected_og_refs = [fname.split('.')[0] for fname in align_files]
 
 #selected_ogs = ['OG2645'] #'OG4150', 'OG2603', 'OG3677', 'OG2845']
 
-selected_og_refs = ['OG4150_REF_Scer_AF-P07256-F1-model_v2', 'OG2603_REF_Scer_AF-P50076-F1-model_v2', 'OG2845_REF_Scer_AF-P43577-F1-model_v2', 'OG3677_REF_Scer_AF-P47125-F1-model_v2', 'OG1299_REF_Scer_AF-P00549-F1-model_v2']
+selected_og_refs = ['OG4150_REF_Scer_AF-P07256-F1-model_v2'] #, 'OG2603_REF_Scer_AF-P50076-F1-model_v2', 'OG2845_REF_Scer_AF-P43577-F1-model_v2', 'OG3677_REF_Scer_AF-P47125-F1-model_v2', 'OG1299_REF_Scer_AF-P00549-F1-model_v2']
 
 for og_ref in selected_og_refs: 
     print(og_ref)
@@ -59,8 +59,11 @@ for og_ref in selected_og_refs:
     # also should run with outgroop of pombe to root tree
     iqtree_command = ["iqtree", 
                       "-s" , og_pep_msa_fname_trimmed ,
+                      iqtree -s ${trimmed.alignment} -nt AUTO -bb 1000 -bnni -alrt 1000
                       #"-m", 'LG+I+G4',  #'MF', #only runs model finder 
                       "-nt", "AUTO",  #automatically determines number of threads 
+                      "-bb", "1000",
+                      "-alrt", "1000",
                       #"-o", 'Spom_AF-Q10208-F1-model_v2'  #Outgroup for rooting should be pombe  for now using default. 
                      ]
     print(" ".join(iqtree_command))
