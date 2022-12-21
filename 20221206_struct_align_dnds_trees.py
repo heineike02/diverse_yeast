@@ -17,7 +17,7 @@ from Bio import SeqIO
 import pandas as pd
 import shutil
 
-base_dir = os.path.normpath('~/alphafold')
+base_dir = os.path.normpath('/home/heineikeb/alphafold')
 #os.path.normpath('/home/heineike_wsl2/alphafold') #Ben's computer
 
 aln_dir = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/fasta_renamed') 
@@ -30,10 +30,10 @@ selected_og_refs = [fname.split('.')[0] for fname in align_files]
 
 #selected_ogs = ['OG2645'] #'OG4150', 'OG2603', 'OG3677', 'OG2845']
 
-selected_og_refs = ['OG4150_REF_Scer_AF-P07256-F1-model_v2'] #, 'OG2603_REF_Scer_AF-P50076-F1-model_v2', 'OG2845_REF_Scer_AF-P43577-F1-model_v2', 'OG3677_REF_Scer_AF-P47125-F1-model_v2', 'OG1299_REF_Scer_AF-P00549-F1-model_v2']
+#selected_og_refs = ['OG4150_REF_Scer_AF-P07256-F1-model_v2'] #, 'OG2603_REF_Scer_AF-P50076-F1-model_v2', 'OG2845_REF_Scer_AF-P43577-F1-model_v2', 'OG3677_REF_Scer_AF-P47125-F1-model_v2', 'OG1299_REF_Scer_AF-P00549-F1-model_v2']
 
-for og_ref in selected_og_refs: 
-    print(og_ref)
+for jj, og_ref in enumerate(selected_og_refs): 
+    print(og_ref + ' ' + str(jj) + ' of ' + str(len(selected_og_refs)))
     #og_ref = 'OG4150_REF_Scer_AF-P07256-F1-model_v2'
     og,ref = og_ref.split('_REF_')
     og_pep_msa_fname = aln_dir + os.sep + og_ref + '.tm.fasta'
@@ -55,13 +55,11 @@ for og_ref in selected_og_refs:
     og_pep_msa_fname_trimmed = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/trim_default/' + og_ref + '.tm.fasta.clipkit')
 
     # Run iQtree on trimmed peptide MSA  
-    # for now only running with a given model, but will use model finder in future
-    # also should run with outgroop of pombe to root tree
+    # Should I run with a pombe outgroup? 
     iqtree_command = ["iqtree", 
-                      "-s" , og_pep_msa_fname_trimmed ,
-                      iqtree -s ${trimmed.alignment} -nt AUTO -bb 1000 -bnni -alrt 1000
+                      "-s" , og_pep_msa_fname_trimmed,
                       #"-m", 'LG+I+G4',  #'MF', #only runs model finder 
-                      "-nt", "AUTO",  #automatically determines number of threads 
+                      "-nt", "7", #"AUTO"  automatically determines number of threads but 7 was performing well
                       "-bb", "1000",
                       "-alrt", "1000",
                       #"-o", 'Spom_AF-Q10208-F1-model_v2'  #Outgroup for rooting should be pombe  for now using default. 
@@ -71,7 +69,7 @@ for og_ref in selected_og_refs:
     subprocess.run(iqtree_command)
 
     #move treefiles to new directory
-    for suffix in ['bionj', 'ckp.gz','iqtree', 'log', 'mldist', 'treefile']:
+    for suffix in [ 'ckp.gz','iqtree', 'bionj','mldist', 'log', 'treefile', 'contree','model.gz','splits.nex']:
         fname_from = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/trim_default/' + og_ref + '.tm.fasta.clipkit.' + suffix)
         fname_to = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/trees/' + og_ref + '.tm.fasta.clipkit.' + suffix)
         shutil.move(fname_from, fname_to)
@@ -89,6 +87,8 @@ for og_ref in selected_og_refs:
                  '-i', seq_name_map_fname, 
                  '-o', tree_renamed
                 ]
+
+    print(" ".join(phykit_rename_cmd))
 
     subprocess.run(phykit_rename_cmd)
 
