@@ -27,9 +27,16 @@ base_dir = os.path.normpath('/home/heineike_wsl2/alphafold')
 aln_dir = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/fasta_renamed') 
 
 align_files = os.listdir(aln_dir)
-selected_og_refs = [fname.split('.')[0] for fname in align_files]
+selected_alignments = [fname.split('.')[0] for fname in align_files]
 
 trim_msa_thresh = 0.25  # Threshold to remove OGs that have poor alignments.  If the strict trimming MSA length is less than .25 * median sequence length, the OG is removed. 
+
+# As of 10 Jan 2023 that resulted in three OGs being removed. 
+# Orthogroups filtered out when running 20221206_struct_align_dnds_msas.py because strict trimming of alignment was below trim_msa_thresh=0.25 * average sequence length threshold
+# OG2147_REF_Scer_AF-P39692-F1-model_v2
+# OG1306_REF_Scer_AF-P38298-F1-model_v2
+# OG1746_REF_Scer_AF-P32642-F1-model_v2
+
 
 ogs_filtered = []
 
@@ -41,11 +48,18 @@ ogs_filtered = []
 #selected_og_refs = ['OG2645_REF_Scer_AF-P05375-F1-model_v2']#['OG4150_REF_Scer_AF-P07256-F1-model_v2', 'OG2603_REF_Scer_AF-P50076-F1-model_v2', 'OG2845_REF_Scer_AF-P43577-F1-model_v2', 'OG3677_REF_Scer_AF-P47125-F1-model_v2', 'OG1299_REF_Scer_AF-P00549-F1-model_v2']
 
 
-for og_ref in selected_og_refs: 
-    print(og_ref)
-    #og_ref = 'OG4150_REF_Scer_AF-P07256-F1-model_v2'
-    og,ref = og_ref.split('_REF_')
-    og_pep_msa_fname = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/fasta_renamed/' + og_ref + '.tm.fasta')
+## Get this to handle non REF ones or filter them out
+#OG1111_alloascoidea_hylecoeti__OG1111__0_3867
+#og_ref = 'OG4150_REF_Scer_AF-P07256-F1-model_v2'
+
+for alignment in selected_alignments: 
+    #     print(alignment)
+    #     if alignment.split('_')[1]=='REF':
+    #         og,ref = alignment.split('_REF_')
+    #     else: 
+    og = alignment.split('_')[0]
+    
+    og_pep_msa_fname = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/fasta_renamed/' + alignment + '.tm.fasta')
     
     #strict trimming for codon alignments    
     print('Strict trimming')
@@ -58,11 +72,11 @@ for og_ref in selected_og_refs:
     for suffix in suffixes: 
         #Move clipkit files to new folder
         shutil.move(og_pep_msa_fname + suffix, 
-                    base_dir + os.sep + os.path.normpath('msas/structural/tm_align/trim_strict/' + og_ref + '.tm.fasta' + suffix)
+                    base_dir + os.sep + os.path.normpath('msas/structural/tm_align/trim_strict/' + alignment + '.tm.fasta' + suffix)
                    )
 
     ##Open alignment and check the length.  If the length is less than 25% of the length of the ref structure then skip and throw a flag.  
-    msa_pep_trimmed = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/trim_strict/' + og_ref + '.tm.fasta.clipkit')
+    msa_pep_trimmed = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/trim_strict/' + alignment + '.tm.fasta.clipkit')
 
     og_aln_fasta = SeqIO.parse(og_pep_msa_fname, 'fasta')
     msa_pep_trimmed_fasta = SeqIO.parse(msa_pep_trimmed,'fasta')
@@ -80,8 +94,8 @@ for og_ref in selected_og_refs:
         ##Need to verify these alignments have the same AA sequence as the protein sequence and cds - i.e. that they are not trimmed 
 
         print('Thread orig alignment')
-        og_cds_fname = base_dir + os.sep +  os.path.normpath('msas/structural/tm_align/cds/' + og_ref + '.tm_present.cds.fasta')
-        og_cds_msa_fname = base_dir + os.sep +  os.path.normpath('msas/structural/tm_align/cds_aln/' + og_ref +  '.tm.cds.aln.fasta')
+        og_cds_fname = base_dir + os.sep +  os.path.normpath('selected_proteins/og_sequences/cds_tm/' + alignment + '.cds.fasta')
+        og_cds_msa_fname = base_dir + os.sep +  os.path.normpath('msas/structural/tm_align/cds_aln/' + alignment +  '.tm.cds.aln.fasta')
 
         phykit_cmd = ['phykit', 'thread_dna',
                       '-p', og_pep_msa_fname,
@@ -94,7 +108,7 @@ for og_ref in selected_og_refs:
         #Make Trimmed Alignment
         print('Make Trimmed Alignment')
     
-        msa_cds_trimmed = base_dir + os.sep +  os.path.normpath('msas/structural/tm_align/cds_trim_strict/' + og_ref +  '.tm.fasta.clipkit.cds')
+        msa_cds_trimmed = base_dir + os.sep +  os.path.normpath('msas/structural/tm_align/cds_trim_strict/' + alignment +  '.tm.fasta.clipkit.cds')
 
         phykit_cmd = ['phykit', 'thread_dna',
                       '-p', msa_pep_trimmed,
@@ -114,7 +128,7 @@ for og_ref in selected_og_refs:
 
         #Make the sequence name map
         og_pep_msa = SeqIO.parse(og_pep_msa_fname,'fasta')
-        seq_name_map_fname = base_dir + os.sep +  os.path.normpath('msas/structural/tm_align/seq_name_map/' + og_ref + '.tm.tsv')
+        seq_name_map_fname = base_dir + os.sep +  os.path.normpath('msas/structural/tm_align/seq_name_map/' + alignment + '.tm.tsv')
         with open(seq_name_map_fname,'w') as fout_seq_name: 
             fout_seq_name.write('seq_name\tseq_no\n')
             for ind, record in enumerate(og_pep_msa):
@@ -153,8 +167,8 @@ for og_ref in selected_og_refs:
                     f_out.write(line)
     
     else: 
-        print(og_ref + ' skipped: Trimmed alignment shorter than ' + str(trim_msa_thresh) + 'times average alginment length')
-        ogs_filtered.append(og_ref)
+        print(alignment + ' skipped: Trimmed alignment shorter than ' + str(trim_msa_thresh) + 'times average alginment length')
+        ogs_filtered.append(alignment)
         
 
 filtered_og_log_fname = base_dir + os.sep +  os.path.normpath('msas/structural/tm_align/cds_trim_strict/filtered_og.log')

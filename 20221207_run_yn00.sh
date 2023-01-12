@@ -21,11 +21,8 @@ do
     
     #Change into directory and call codeML
     cd $CALC_DIR
-
-    ## Copy in tree
-    #cp ${BASE_DIR}msas/structural/tm_align/trees/${OG_BASE}.tm.fasta.clipkit.treefile.renamed ${CALC_DIR}tree.treefile
     
-    # Copy in phy
+    # Copy in alignment file phy
     cp ${BASE_DIR}msas/structural/tm_align/cds_trim_strict/${OG_BASE}.tm.fasta.clipkit.cds.renamed.codeML.phy ${CALC_DIR}aln.phy
     
     # Copy in control file
@@ -34,13 +31,12 @@ do
     # Run codeML
     /var/lib/paml/paml-4.10.6/bin/yn00 ${CALC_DIR}yn00.ctl
 
-
     # remove data
     # for now skipping it
     # paml_results_out = base_dir + os.sep + os.path.normpath('selection_calculations/yn00/' + og_base + '.yn00.out')
     # shutil.copy(calc_dir + og_base + '.yn00.out', paml_results_out)
-
-
+    
+    #was doing this in python originally
     #python /home/heineike_wsl2/github_s/diverse_yeast/20221206_struct_align_yn00.py
 
 done

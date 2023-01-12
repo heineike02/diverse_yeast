@@ -1,3 +1,5 @@
+#Running in 20221207_run_yn00.sh instead of this script
+
 import shutil
 import os
 import subprocess

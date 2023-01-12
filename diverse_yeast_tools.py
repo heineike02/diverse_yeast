@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import json
 import pickle
 from Bio import SeqIO
 from Bio import AlignIO   #, Align
@@ -250,3 +251,30 @@ def seq_squeeze(seq_in):
             seq_out = seq_out + res
     
     return seq_out
+
+
+def load_model_og_lookup():
+    #Make dictionary to look up og from gene_id for model species from og_metadatafile
+    
+    og_metadata_fname = base_dir + os.sep + os.path.normpath('selected_proteins/og_metadata.json')
+
+    with open(og_metadata_fname, 'r') as f:
+        og_metadata = json.load(f) 
+    
+    #Make look up table from og_metadata
+    abbrev_fields = [('Calb', 'calb_genes'),
+                     ('Scer', 'sc_genes'), 
+                     ('Spom', 'spom_genes')]
+
+    model_og_lookup = {}
+
+    for (spec_abbrev, metadata_field) in abbrev_fields: 
+        model_og_lookup_spec = {}
+        for og, metadata in og_metadata.items(): 
+            model_genes = metadata[metadata_field]
+            for gene in model_genes:
+                if gene != 'NONE': 
+                    model_og_lookup_spec[gene] = og
+        model_og_lookup[spec_abbrev] = model_og_lookup_spec
+    
+    return model_og_lookup
