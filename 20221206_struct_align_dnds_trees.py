@@ -23,7 +23,11 @@ base_dir = os.path.normpath('/home/heineikeb/alphafold')
 aln_dir = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/fasta_renamed') 
                                      
 align_files = os.listdir(aln_dir)
-selected_og_refs = [fname.split('.')[0] for fname in align_files]
+selected_alignments_all = [fname.split('.')[0] for fname in align_files]
+
+completed_alignments = [fname.split('.')[0] for fname in os.listdir(base_dir + os.sep + os.path.normpath('msas/structural/tm_align/trim_default/'))]
+
+selected_alignments = list(set(selected_alignments_all)-set(completed_alignments))
 
 #os.path.normpath('/home/heineike_wsl2/Crick_LMS/projects/diverse_yeasts/alphafold')
 # output_dir = base_dir + os.sep + os.path.normpath('selection_calculations/20220526_sel_calc')
@@ -32,65 +36,79 @@ selected_og_refs = [fname.split('.')[0] for fname in align_files]
 
 #selected_og_refs = ['OG4150_REF_Scer_AF-P07256-F1-model_v2'] #, 'OG2603_REF_Scer_AF-P50076-F1-model_v2', 'OG2845_REF_Scer_AF-P43577-F1-model_v2', 'OG3677_REF_Scer_AF-P47125-F1-model_v2', 'OG1299_REF_Scer_AF-P00549-F1-model_v2']
 
-for jj, og_ref in enumerate(selected_og_refs): 
-    print(og_ref + ' ' + str(jj) + ' of ' + str(len(selected_og_refs)))
-    #og_ref = 'OG4150_REF_Scer_AF-P07256-F1-model_v2'
-    og,ref = og_ref.split('_REF_')
-    og_pep_msa_fname = aln_dir + os.sep + og_ref + '.tm.fasta'
+min_seq = 4
 
-    #trim alignment with default settings and outputs log file
-    clipkit_cmd = ['clipkit', og_pep_msa_fname, '-l']
-    subprocess.run(clipkit_cmd)
+trees_log_fname = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/trees/trees_log.txt')
 
-    #Move log and output
+with open(trees_log_fname, 'w') as trees_log:
 
-    suffixes = ['.clipkit','.clipkit.log' ]
+    for jj, alignment in enumerate(selected_alignments): 
+        print(alignment + ' ' + str(jj) + ' of ' + str(len(selected_alignments)))
+        #og_ref = 'OG4150_REF_Scer_AF-P07256-F1-model_v2'
+        #og,ref = og_ref.split('_REF_')
+        og = alignment.split('_')
+        og_pep_msa_fname = aln_dir + os.sep + alignment + '.tm.fasta'
 
-    for suffix in suffixes: 
-        #Move clipkit files to new folder
-        shutil.move(og_pep_msa_fname + suffix, 
-                        base_dir + os.sep + os.path.normpath('msas/structural/tm_align/trim_default/' + og_ref + '.tm.fasta' + suffix)
-                       )
+        #Check number of species and only keep OGs with sequences greater than or equal to min_seq
+        og_pep_msa = SeqIO.parse(og_pep_msa_fname,'fasta')
+        nseqs = len(list(og_pep_msa))    
+        
+        if nseqs>=min_seq: 
 
-    og_pep_msa_fname_trimmed = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/trim_default/' + og_ref + '.tm.fasta.clipkit')
+            #trim alignment with default settings and outputs log file
+            clipkit_cmd = ['clipkit', og_pep_msa_fname, '-l']
+            subprocess.run(clipkit_cmd)
 
-    # Run iQtree on trimmed peptide MSA  
-    # Should I run with a pombe outgroup? 
-    iqtree_command = ["iqtree", 
-                      "-s" , og_pep_msa_fname_trimmed,
-                      #"-m", 'LG+I+G4',  #'MF', #only runs model finder 
-                      "-nt", "7", #"AUTO"  automatically determines number of threads but 7 was performing well
-                      "-bb", "1000",
-                      "-alrt", "1000",
-                      #"-o", 'Spom_AF-Q10208-F1-model_v2'  #Outgroup for rooting should be pombe  for now using default. 
-                     ]
-    print(" ".join(iqtree_command))
+            #Move log and output
 
-    subprocess.run(iqtree_command)
+            suffixes = ['.clipkit','.clipkit.log' ]
 
-    #move treefiles to new directory
-    for suffix in [ 'ckp.gz','iqtree', 'bionj','mldist', 'log', 'treefile', 'contree','model.gz','splits.nex']:
-        fname_from = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/trim_default/' + og_ref + '.tm.fasta.clipkit.' + suffix)
-        fname_to = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/trees/' + og_ref + '.tm.fasta.clipkit.' + suffix)
-        shutil.move(fname_from, fname_to)
+            for suffix in suffixes: 
+                #Move clipkit files to new folder
+                shutil.move(og_pep_msa_fname + suffix, 
+                                base_dir + os.sep + os.path.normpath('msas/structural/tm_align/trim_default/' + alignment + '.tm.fasta' + suffix)
+                               )
 
-    #Format phylogenetic Tree for codeml by shortening the name
+            og_pep_msa_fname_trimmed = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/trim_default/' + alignment + '.tm.fasta.clipkit')
 
-    # shorten name.  Uses seq_name_map made in in dnds_msas.py
-    seq_name_map_fname = base_dir + os.sep +  os.path.normpath('msas/structural/tm_align/seq_name_map/' + og_ref + '.tm.tsv')
+            # Run iQtree on trimmed peptide MSA  
+            # Should I run with a pombe outgroup? 
+            iqtree_command = ["iqtree", 
+                              "-s" , og_pep_msa_fname_trimmed,
+                              #"-m", 'LG+I+G4',  #'MF', #only runs model finder 
+                              "-nt", "7", #"AUTO"  automatically determines number of threads but 7 was performing well
+                              "-bb", "1000",
+                              "-alrt", "1000",
+                              #"-o", 'Spom_AF-Q10208-F1-model_v2'  #Outgroup for rooting should be pombe  for now using default. 
+                             ]
+            print(" ".join(iqtree_command))
 
-    #Use phykit rename_tree_tips to shorten the name
-    tree_orig = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/trees/' + og_ref + '.tm.fasta.clipkit.treefile')
-    tree_renamed = tree_orig+'.renamed'
-    phykit_rename_cmd = ['phykit', 'rename_tree_tips',
-                 tree_orig,
-                 '-i', seq_name_map_fname, 
-                 '-o', tree_renamed
-                ]
+            subprocess.run(iqtree_command)
 
-    print(" ".join(phykit_rename_cmd))
+            #move treefiles to new directory
+            for suffix in [ 'ckp.gz','iqtree', 'bionj','mldist', 'log', 'treefile', 'contree','model.gz','splits.nex','uniqueseq.phy']:
+                fname_from = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/trim_default/' + alignment + '.tm.fasta.clipkit.' + suffix)
+                fname_to = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/trees/' + alignment + '.tm.fasta.clipkit.' + suffix)
+                shutil.move(fname_from, fname_to)
 
-    subprocess.run(phykit_rename_cmd)
+            #Format phylogenetic Tree for codeml by shortening the name
 
+            # shorten name.  Uses seq_name_map made in in dnds_msas.py
+            seq_name_map_fname = base_dir + os.sep +  os.path.normpath('msas/structural/tm_align/seq_name_map/' + alignment + '.tm.tsv')
 
+            #Use phykit rename_tree_tips to shorten the name
+            tree_orig = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/trees/' + alignment + '.tm.fasta.clipkit.treefile')
+            tree_renamed = tree_orig+'.renamed'
+            phykit_rename_cmd = ['phykit', 'rename_tree_tips',
+                         tree_orig,
+                         '-i', seq_name_map_fname, 
+                         '-o', tree_renamed
+                        ]
+
+            print(" ".join(phykit_rename_cmd))
+
+            subprocess.run(phykit_rename_cmd)
+
+        else: 
+            trees_log.write(alignment + ' has less than ' + str(min_seq) + ' sequences. No tree created.\n')
 
