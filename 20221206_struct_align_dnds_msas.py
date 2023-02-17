@@ -29,7 +29,7 @@ aln_dir = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/fasta_r
 align_files = os.listdir(aln_dir)
 selected_alignments = [fname.split('.')[0] for fname in align_files]
 
-trim_msa_thresh = 0.25  # Threshold to remove OGs that have poor alignments.  If the strict trimming MSA length is less than .25 * median sequence length, the OG is removed. 
+trim_msa_thresh = 0.25  # Threshold to remove clusters that have poor alignments.  If the strict trimming MSA length is less than .25 * median sequence length, the cluster is removed. 
 
 # As of 10 Jan 2023 that resulted in three OGs being removed. 
 # Orthogroups filtered out when running 20221206_struct_align_dnds_msas.py because strict trimming of alignment was below trim_msa_thresh=0.25 * average sequence length threshold
@@ -91,7 +91,7 @@ for alignment in selected_alignments:
 
     if (trimmed_msa_len/med_length)>trim_msa_thresh:    
         #Thread original alignment               
-        ##Need to verify these alignments have the same AA sequence as the protein sequence and cds - i.e. that they are not trimmed 
+        ##Good place for a test that these alignments have same AA sequence as the protein sequence and CDS.  
 
         print('Thread orig alignment')
         og_cds_fname = base_dir + os.sep +  os.path.normpath('selected_proteins/og_sequences/cds_tm/' + alignment + '.cds.fasta')
