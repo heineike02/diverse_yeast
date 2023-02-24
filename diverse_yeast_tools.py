@@ -11,6 +11,18 @@ divyeast_dir = os.path.normpath('C:/Users/heineib/Documents/GitHub/diverse_yeast
 y1000plus_dir = os.path.normpath('C:/Users/heineib/Documents/GitHub/y1000plus_tools/data') + os.sep
 genomes_dir = os.path.normpath('G:/My Drive/Crick_LMS/external_data/genomes')
 
+ctg_clade_dict = {'candida_albicans': 'CUG-Ser1',
+                  'debaryomyces_hansenii': 'CUG-Ser1',  
+                  'candida_tropicalis': 'CUG-Ser1',
+                  'ascoidea_rubescens': 'CUG-Ser2',
+                  'pachysolen_tannophilus': 'CUG-Ala'
+                 }
+
+ctg_clade_alt_res = {'CUG-Ala': 'A', 
+                     'CUG-Ser1': 'S',
+                     'CUG-Ser2': 'S'
+                     }
+
 
 #Function to parse sequence id from first line of fasta file in either shen or uniprot proteomes. 
 
@@ -249,7 +261,9 @@ def seq_squeeze(seq_in):
     #input: A string containing a sequence with dashes from a multiple sequence alignment
     #Output: 
     # seq_out - a string with a squeezed sequence with dashes removed
-    # seq_squeeze_reindex: a dictionary mapping indiceds from MSA to indeces for the squeezed sequence (0 based)
+    # seq_squeeze_reindex: a dictionary mapping indices from MSA to indices for the squeezed sequence (0 based)
+    # a mapping containing consecutive integers that link the index from the squeezed sequence to the corresponding indices of the msa.  
+    
     seq_out = ''
     for res in seq_in:
         if res!= '-':
@@ -257,15 +271,26 @@ def seq_squeeze(seq_in):
             
     seq_squeeze_reindex = {}
     seq_ind = 0
+    #msa_ind_old = 0
+    pair_mapping = []
     for msa_ind, res in enumerate(seq_in):
         if res != '-':
             seq_squeeze_reindex[msa_ind] = seq_ind
+            if seq_ind>0:
+                seq_pair = (seq_ind-1,seq_ind)
+                msa_pair = (msa_ind_old,msa_ind)
+                pair_mapping.append((seq_pair, msa_pair))
+            
             seq_ind = seq_ind + 1
+            msa_ind_old = msa_ind
+            #print(msa_ind_old)
+            #print(seq_ind)
+            
         else: 
             seq_squeeze_reindex[msa_ind] = None
 
     
-    return seq_out, seq_squeeze_reindex
+    return seq_out, seq_squeeze_reindex, pair_mapping
 
 
 def load_model_og_lookup():
@@ -394,11 +419,11 @@ def extract_beb_values(bs_rst_fname):
 
     neb_data = {}
 
-    with open(bs_rst_file, 'r') as f_in: 
+    with open(bs_rst_fname, 'r') as f_in: 
         #result_file = open(bs_rst_file).readlines()
 
         for line in f_in:
-            if 'TREE' in line: 
+            if 'TREE #' in line: 
                 tree_no = int(line.split()[2])
                 neb_data_tree = {}
 
@@ -447,16 +472,19 @@ def identify_ref_residue(og_ref, residues_of_interest):
 
     aln_fname = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/fasta_renamed/' + og_ref + '.tm.fasta')
 
-    #Get index of Reference sequence
+    #Get species of first sequence (paml_spec used as the reference for the paml coordinates)
+    #Also get index of Reference sequence
     ref_ind=None
     aln = AlignIO.read(open(aln_fname),'fasta')
     for (jj, record) in enumerate(aln): 
+        if jj==0: 
+            paml_spec = species_from_fasta_id(record.id)
         #print(record.id.split('.')[0])
         if ref == record.id.split('.')[0]:
             ref_ind = jj
 
     #Get map for reference sequence from msa index
-    ref_seq, msa2ref = dyt.seq_squeeze(str(aln[ref_ind,:].seq))
+    ref_seq, msa2ref, pair_mapping = seq_squeeze(str(aln[ref_ind,:].seq))
     #msa2ref links the 0 based index of the alignment to the 0 based index of the reference sequence
 
     #after iteration need to read alignment in again
@@ -470,7 +498,20 @@ def identify_ref_residue(og_ref, residues_of_interest):
 
         #aa from top line is 1-based index
         #aln_trim is 0-based
-        assert aa==aln_trim[0,res-1], 'Residue of first line does not match output from paml ' + aa + str(res) + ' != ' + aln_trim[1,res-1]
+        if aa!=aln_trim[0,res-1]: 
+            #Check if it is a CTG clade issue
+            CTG_issue = False
+            if paml_spec in ctg_clade_dict.keys(): 
+                #If not raise an Error
+                clade= ctg_clade_dict[paml_spec]
+                alt_res = ctg_clade_alt_res[clade]
+                
+                if (aa == 'L') & (aln_trim[0,res-1]==alt_res):
+                    CTG_issue = True
+                    print('paml used wrong genetic code to identify residue in first species in alignment (' + paml_spec + ') ' + aa + str(res) + ' from paml should be ' + aln_trim[0,res-1])
+                            
+            if not(CTG_issue): 
+                raise ValueError('Residue of first line does not match output from paml ' + aa + str(res) + ' != ' + aln_trim[0,res-1])
 
         #Identify index in original alignment
         #trim_ind_2_orig_ind is 1 based, orig_res_ind is 0-based
@@ -479,14 +520,37 @@ def identify_ref_residue(og_ref, residues_of_interest):
         orig_res_of_int = aln[0,orig_res_ind]
         #print(aln[:,(orig_res_ind-3):(orig_res_ind+3)])
         #print(orig_res_of_int)
-        assert aa==orig_res_of_int, 'Residue of first line in full alignment does not match output from paml ' + aa + str(res) + ' != ' + orig_res_of_int
+        if aa!=orig_res_of_int: 
+            #Check if it is a CTG clade issue
+            CTG_issue = False
+            if paml_spec in ctg_clade_dict.keys(): 
+                #If not raise an Error
+                clade= ctg_clade_dict[paml_spec]
+                alt_res = ctg_clade_alt_res[clade]
+                
+                if (aa == 'L') & (aln_trim[0,res-1]==alt_res):
+                    CTG_issue = True
+                    print('paml used wrong genetic code to identify residue in first species in alignment (' + paml_spec + ') ' + aa + str(res) + ' from paml should be ' + orig_res_of_int)
+                            
+            if not(CTG_issue): 
+                raise ValueError('Residue of first line in full alignment does not match output from paml ' + aa + str(res) + ' != ' + orig_res_of_int)
 
         #orig_res_ind is 0-based, msa2ref is 0 based, want ref_res_ind should be 1 based to match standard nomenclature
-        ref_res_ind = msa2ref[orig_res_ind] + 1
+        if msa2ref[orig_res_ind] == None: 
+            for ((ref_low,ref_high),(msa_low,msa_high)) in pair_mapping: 
+                if (orig_res_ind > msa_low) & (orig_res_ind < msa_high): 
+                    (ref_low_selected, ref_high_selected) = (ref_low, ref_high)
+                    (msa_low_selected, msa_high_selected) = (msa_low, msa_high)
+                    break
         
-        ref_res_of_int.append(aln[ref_ind,orig_res_ind] + str(ref_res_ind))
+            ref_res_of_int.append('Gap between ' + aln[ref_ind,msa_low_selected] + str(ref_low_selected + 1) +' and ' + aln[ref_ind,msa_high_selected] + str(ref_high_selected + 1))
+        
+        else: 
+            ref_res_ind = msa2ref[orig_res_ind] + 1
+            ref_res_of_int.append(aln[ref_ind,orig_res_ind] + str(ref_res_ind))
+            
         aln_res_of_int.append(aln[ref_ind,orig_res_ind] + str(orig_res_ind))
-        
+    
     return ref_res_of_int, aln_res_of_int, ref_seq
 
 def write_marked_trees(labeled_trees_fname, tree_node_labels, nodes_to_label):
@@ -586,6 +650,8 @@ def extract_ML_est_BS(bs_fname):
                     ml_line = next(f_in)
                 ml_line_sp = ml_line.split(':')[3].split()
                 ml_data_out[tree_no] = (float(ml_line_sp[0]), float(ml_line_sp[1]))
+    
+    return ml_data_out
 
 def get_branch_leaves(tree_node_labels, selected_node_name, og_name_map, marked_tree_branch_info_goi):
     #For a given branch site tree and a selected node name, output 
@@ -593,11 +659,6 @@ def get_branch_leaves(tree_node_labels, selected_node_name, og_name_map, marked_
     # leaves_long:  a list of proteins (full name)
     # specs_unique: a list of species  
     # paralogs_flag: true if there are paralogs in that branch
-
-    model_spec_lookup = {'Scer': 'saccharomyces_cerevisiae',
-                         'Calb': 'candida_albicans',
-                         'Spom': 'schizosaccharomyces_pombe'
-    }
 
     full_tree = Tree(tree_node_labels, format=8)
 
@@ -617,16 +678,7 @@ def get_branch_leaves(tree_node_labels, selected_node_name, og_name_map, marked_
     leaves_long = list(og_name_map[og_name_map['seq_no'].isin(leaves_short)]['seq_name']) #keeping .pdb label
     specs_non_unique = []
     for seq_name in leaves_long: 
-        seq_name_sp = seq_name.split('_')
-        if seq_name_sp[0] in ['REF','Scer','Calb','Spom']: 
-            if seq_name_sp[0] == 'REF':
-                spec_abbrev = seq_name_sp[1]
-            else: 
-                spec_abbrev = seq_name_sp[0]
-
-            spec = model_spec_lookup[spec_abbrev]
-        else: 
-            spec = seq_name.split('__')[0]
+        spec = species_from_fasta_id(seq_name)
         specs_non_unique.append(spec)
 
     specs = list(set(specs_non_unique))
@@ -642,3 +694,28 @@ def get_branch_leaves(tree_node_labels, selected_node_name, og_name_map, marked_
                          'paralogs_flag': paralogs_flag
                         }
     return branch_leaves_out
+    
+def species_from_fasta_id(fasta_id):
+    #returns the species name given the fasta header (e.g. zygosaccharomyces_rouxii__OG2006__342_4561.pdb or Calb_AF-A0A1D8PDP8-F1-model_v2.pdb)
+    #Can also handle REF_zygosaccharomyces_rouxii__OG2006__342_4561.pdb, although that will only come from clusters with no Scer proteins. 
+
+    model_spec_lookup = {'Scer': 'saccharomyces_cerevisiae',
+                         'Calb': 'candida_albicans',
+                         'Spom': 'schizosaccharomyces_pombe'
+    }
+
+    fasta_id_sp = fasta_id.split('_')
+    if fasta_id_sp[0] in ['REF','Scer','Calb','Spom']:
+        if fasta_id_sp[0] == 'REF':
+            if fasta_id_sp[1] in ['Scer','Calb','Spom']: 
+                spec = model_spec_lookup[fasta_id_sp[1]]
+            else:   
+                # ref is not Scer, Calb, Spom
+                print('REF seq is not Scer, Calb or Spom')
+                spec = '_'.join(fasta_id.split('__')[0].split('_')[1:3])
+        else:
+            spec = model_spec_lookup[fasta_id_sp[0]]
+    else: 
+        spec = fasta_id.split('__')[0]
+
+    return spec
