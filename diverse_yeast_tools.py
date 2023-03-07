@@ -1,7 +1,9 @@
 import os
+import numpy as np
 import pandas as pd
 import json
 import pickle
+import warnings
 from Bio import SeqIO
 from Bio import AlignIO   #, Align
 from ete3 import Tree, EvolTree
@@ -319,7 +321,7 @@ def load_model_og_lookup():
     
     return model_og_lookup
 
-def calMean_dN_dS_y0(paml_gene_dn_ds_file, output_file, method="median dN_dS, dN, dS", min_ds = 0.005, max_ds = 3.0, max_dn_ds = 50):
+def calMean_dN_dS_yn00(paml_gene_dn_ds_file, output_file, method="median dN_dS, dN, dS", min_ds = 0.005, max_ds = 3.0, max_dn_ds = 50):
     #Parse YN00 files 
     #Based on https://github.com/SysBioChalmers/Multi_scale_evolution/blob/main/evolution_analysis/code/gene_dn_ds_paml/result_parse_yn00_update.py
     
@@ -338,7 +340,7 @@ def calMean_dN_dS_y0(paml_gene_dn_ds_file, output_file, method="median dN_dS, dN
         # further remove the line with only "\n"
         dn_ds0 = [x for x in dn_ds if x != "\n"]
         # save the dn_ds
-        dn_ds_df = Export_dn_ds(dnds1=dn_ds0, output_file=output_file)
+        dn_ds_df = Export_dn_ds_yn00(dnds1=dn_ds0, output_file=output_file)
 
         #Filter dS to be between 0.005 and less than 3
         dn_ds_filt1 = dn_ds_df[(dn_ds_df['dS_new']>min_ds)&(dn_ds_df['dS_new']<max_ds)]
@@ -372,7 +374,7 @@ def calMean_dN_dS_y0(paml_gene_dn_ds_file, output_file, method="median dN_dS, dN
             return (np.median(dn_ds[np.isfinite(dn_ds)]),np.median(dn[np.isfinite(dn)]),np.median(ds[np.isfinite(ds)]) )
     
         
-def Export_dn_ds_y0(dnds1, output_file):
+def Export_dn_ds_yn00(dnds1, output_file):
     new_dnds = []
     colname1 = None
     for i, x in enumerate(dnds1):
