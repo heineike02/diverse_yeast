@@ -13,4 +13,8 @@ export SINGULARITY_BIND='/mnt/g/My Drive/Crick_LMS/projects/diverse_yeasts/alpha
 
 #Test yn00 while removing sequences
 #singularity exec codeml.sif /home/heineike_wsl2/github_s/diverse_yeast/20220301_filter_sparse_seqs.sh
-singularity exec codeml.sif /home/heineike_wsl2/github_s/diverse_yeast/20230301_run_yn00_filterseqs.sh
+#singularity exec codeml.sif /home/heineike_wsl2/github_s/diverse_yeast/20230301_run_yn00_filterseqs.sh
+
+#Test m0 while removing sequences
+singularity exec codeml.sif /home/heineike_wsl2/github_s/diverse_yeast/20220307_filter_sparse_seqs_m0.sh
+#singularity exec codeml.sif /home/heineike_wsl2/github_s/diverse_yeast/20230301_run_yn00_filterseqs.sh
