@@ -3,20 +3,29 @@
 . /opt/conda/etc/profile.d/conda.sh
 conda activate diverse_yeast_env
 
-BASE_DIR=/home/heineike_wsl2/alphafold/
+BASE_DIR=/home/heineikeb/alphafold/
+#/home/heineike_wsl2/alphafold/
 BASE_M0=${BASE_DIR}selection_calculations/m0/
 
 
-for OG_BASE in OG4150_REF_Scer_AF-P07256-F1-model_v2 OG2603_REF_Scer_AF-P50076-F1-model_v2 OG2845_REF_Scer_AF-P43577-F1-model_v2 OG3677_REF_Scer_AF-P47125-F1-model_v2 OG1299_REF_Scer_AF-P00549-F1-model_v2
+#for OG_BASE in OG4150_REF_Scer_AF-P07256-F1-model_v2 OG2603_REF_Scer_AF-P50076-F1-model_v2 OG2845_REF_Scer_AF-P43577-F1-model_v2 OG3677_REF_Scer_AF-P47125-F1-model_v2 OG1299_REF_Scer_AF-P00549-F1-model_v2
 
-#for ALN_FILE in ${BASE_DIR}msas/structural/tm_align/cds_trim_strict/OG*.tm.fasta.clipkit.cds
+#OG4*.tm.fasta.clipkit.renamed
+#${BASE_DIR}msas/structural/tm_align/trees/
+#for A in /home/heineikeb/alphafold/msas/structural/tm_align/trees/OG4*.tm.fasta.clipkit.treefile.renamed; 
+#do 
+#    echo $A
+#done
+for TREE_FILE in /home/heineikeb/alphafold/msas/structural/tm_align/trees/OG*.tm.fasta.clipkit.treefile.renamed
 do 
-#    DIR_OG_BASE=$(echo $ALN_FILE | cut -d '.' -f 1)
-#    OG_BASE=$(echo $DIR_OG_BASE | cut -d '/' -f 9)
+    DIR_OG_BASE=$(echo $TREE_FILE | cut -d '.' -f 1)
+    OG_BASE=$(echo $DIR_OG_BASE | cut -d '/' -f 9)
+    echo $TREE_FILE
+    echo $DIR_OG_BASE
     echo $OG_BASE
     #Make directory
     CALC_DIR=${BASE_M0}${OG_BASE}/
-        
+    echo $CALC_DIR    
     mkdir $CALC_DIR
     
     #Change into directory and call codeML
