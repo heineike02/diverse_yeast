@@ -26,6 +26,12 @@ ctg_clade_alt_res = {'CUG-Ala': 'A',
                      }
 
 
+model_spec_lookup = {'Scer': 'saccharomyces_cerevisiae',
+                     'Calb': 'candida_albicans',
+                     'Spom': 'schizosaccharomyces_pombe'
+}
+
+
 #Function to parse sequence id from first line of fasta file in either shen or uniprot proteomes. 
 
 def gene_id_shen(seq_record):
@@ -259,7 +265,7 @@ def load_model_gene_id_2_swissprot_id():
     
     return gene_id_2_swissprot_id
 
-def seq_squeeze(seq_in):
+def seq_squeeze(seq_in, all_outputs=True):
     #input: A string containing a sequence with dashes from a multiple sequence alignment
     #Output: 
     # seq_out - a string with a squeezed sequence with dashes removed
@@ -270,29 +276,33 @@ def seq_squeeze(seq_in):
     for res in seq_in:
         if res!= '-':
             seq_out = seq_out + res
-            
-    seq_squeeze_reindex = {}
-    seq_ind = 0
-    #msa_ind_old = 0
-    pair_mapping = []
-    for msa_ind, res in enumerate(seq_in):
-        if res != '-':
-            seq_squeeze_reindex[msa_ind] = seq_ind
-            if seq_ind>0:
-                seq_pair = (seq_ind-1,seq_ind)
-                msa_pair = (msa_ind_old,msa_ind)
-                pair_mapping.append((seq_pair, msa_pair))
-            
-            seq_ind = seq_ind + 1
-            msa_ind_old = msa_ind
-            #print(msa_ind_old)
-            #print(seq_ind)
-            
-        else: 
-            seq_squeeze_reindex[msa_ind] = None
+    
+    if all_outputs: 
+        seq_squeeze_reindex = {}
+        seq_ind = 0
+        #msa_ind_old = 0
+        pair_mapping = []
+        for msa_ind, res in enumerate(seq_in):
+            if res != '-':
+                seq_squeeze_reindex[msa_ind] = seq_ind
+                if seq_ind>0:
+                    seq_pair = (seq_ind-1,seq_ind)
+                    msa_pair = (msa_ind_old,msa_ind)
+                    pair_mapping.append((seq_pair, msa_pair))
+
+                seq_ind = seq_ind + 1
+                msa_ind_old = msa_ind
+                #print(msa_ind_old)
+                #print(seq_ind)
+
+            else: 
+                seq_squeeze_reindex[msa_ind] = None
 
     
-    return seq_out, seq_squeeze_reindex, pair_mapping
+        return seq_out, seq_squeeze_reindex, pair_mapping
+    
+    else:
+        return seq_out
 
 
 def load_model_og_lookup():
@@ -701,10 +711,7 @@ def species_from_fasta_id(fasta_id):
     #returns the species name given the fasta header (e.g. zygosaccharomyces_rouxii__OG2006__342_4561.pdb or Calb_AF-A0A1D8PDP8-F1-model_v2.pdb)
     #Can also handle REF_zygosaccharomyces_rouxii__OG2006__342_4561.pdb, although that will only come from clusters with no Scer proteins. 
 
-    model_spec_lookup = {'Scer': 'saccharomyces_cerevisiae',
-                         'Calb': 'candida_albicans',
-                         'Spom': 'schizosaccharomyces_pombe'
-    }
+
 
     fasta_id_sp = fasta_id.split('_')
     if fasta_id_sp[0] in ['REF','Scer','Calb','Spom']:

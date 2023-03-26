@@ -31,7 +31,7 @@ base_dir = os.path.normpath('/home/heineike_wsl2/alphafold')
 selected_alignments = ['OG1273_REF_Scer_AF-P40012-F1-model_v2','OG3104_REF_Scer_AF-P53954-F1-model_v2','OG1230_REF_Scer_AF-P29465-F1-model_v2', 'OG1364_REF_Scer_AF-P27796-F1-model_v2']
 #[fname.split('.')[0] for fname in align_files]
 
-seq_filt_thresh = 0.80 #Threshold percentage of residues that must be present
+seq_filt_thresh = 0.85 #Threshold percentage of residues that must be present
 
 #trim_msa_thresh = 0.25  # Threshold to remove clusters that have poor alignments.  If the strict trimming MSA length is less than .25 * median sequence length, the cluster is removed. 
 #ogs_filtered = []
