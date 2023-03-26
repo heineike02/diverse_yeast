@@ -2,7 +2,7 @@
 cd ~/singularity-ce-3.10.4
 export SINGULARITY_BIND='/mnt/g/My Drive/Crick_LMS/projects/diverse_yeasts/alphafold':/home/heineike_wsl2/alphafold,/mnt/c/Users/heineib/Documents/Github:/home/heineike_wsl2/github_s
 
-singularity exec codeml.sif /home/heineike_wsl2/github_s/diverse_yeast/20221206_struct_align_dnds_msa_bens_cpu.sh
+#singularity exec codeml.sif /home/heineike_wsl2/github_s/diverse_yeast/20221206_struct_align_dnds_msa_bens_cpu.sh
 
 #singularity exec codeml.sif /home/heineike_wsl2/github_s/diverse_yeast/20230301_run_yn00_test_cleandata.sh
 #singularity exec codeml.sif /home/heineike_wsl2/github_s/diverse_yeast/20221206_struct_align_dnds_preps.sh
@@ -21,4 +21,5 @@ singularity exec codeml.sif /home/heineike_wsl2/github_s/diverse_yeast/20221206_
 
 #Calculate tree quantities
 #singularity exec codeml.sif /home/heineike_wsl2/github_s/diverse_yeast/20230317_calculate_tree_quantities.sh
+singularity exec codeml.sif /home/heineike_wsl2/github_s/diverse_yeast/20230326_calculate_tree_quantities.sh
 
