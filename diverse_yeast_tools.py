@@ -647,7 +647,7 @@ def load_dn_ds_m1(m1_fname):
     return data_df
 
 def extract_ML_est_BS(bs_fname):
-    #output: dictionary of tree_number: (ML values, number beside ML value - not sure what it is)
+    #output: dictionary of tree_number: (ML values, number beside ML value related to variability of estimate, flag for check convergence issues)
 
     with open(bs_fname,'r') as f_in: 
 
@@ -655,13 +655,15 @@ def extract_ML_est_BS(bs_fname):
 
         for line in f_in:
             if 'TREE' in line: 
+                check_conv_flag = False
                 tree_no = int(line.split()[2].split(':')[0])
                 ml_line = next(f_in)
                 if 'check convergence' in ml_line:
                     print('check convergence flag, tree number ' + str(tree_no) + ' in ' + bs_fname)
                     ml_line = next(f_in)
+                    check_conv_flag = True
                 ml_line_sp = ml_line.split(':')[3].split()
-                ml_data_out[tree_no] = (float(ml_line_sp[0]), float(ml_line_sp[1]))
+                ml_data_out[tree_no] = (float(ml_line_sp[0]), float(ml_line_sp[1]), check_conv_flag)
     
     return ml_data_out
 
