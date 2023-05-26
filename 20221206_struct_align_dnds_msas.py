@@ -23,8 +23,8 @@ import pandas as pd
 import shutil
 import numpy as np
 
-base_dir = os.path.normpath('/home/heineike_wsl2/alphafold')
-aln_dir = base_dir + os.sep + os.path.normpath('msas/structural/tm_align_2') 
+base_dir = os.path.normpath('/home/heineikeb/alphafold')
+aln_dir = base_dir + os.sep + os.path.normpath('msas/structural/tm_align') 
 
 align_files = os.listdir(aln_dir + os.sep + os.path.normpath('fasta_renamed'))
 selected_alignments = [fname.split('.')[0] for fname in align_files]
