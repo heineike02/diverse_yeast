@@ -1,6 +1,13 @@
 #!/bin/bash
-cd ~/singularity-ce-3.10.4
-export SINGULARITY_BIND='/mnt/g/My Drive/Crick_LMS/projects/diverse_yeasts/alphafold':/home/heineike_wsl2/alphafold,/mnt/c/Users/heineib/Documents/Github:/home/heineike_wsl2/github_s
+cd ~/singularity-ce-3.11.4
+
+#Note:  I have symbolic links outside of singularity for these two directories as alphafold_symlink and alphafold_github since it doesn't seem to be able to overwrite the symbolic link with the bound directory.  
+#It won't work whether you just call the symbolic link or the actual directory itself.  
+#Until I load singularity nothing goes into those directories
+export SINGULARITY_BIND='/mnt/g/My Drive/Crick_LMS/projects/diverse_yeasts/alphafold':/home/heineike/alphafold,/mnt/c/Users/heine/github:/home/heineike/github
+
+#singularity exec codeml.sif /home/heineike/github/diverse_yeast/20221206_struct_align_dnds_msa_bens_cpu.sh
+singularity exec codeml.sif /home/heineike/github/diverse_yeast/20230914_run_m0_subset.sh
 
 #singularity exec codeml.sif /home/heineike_wsl2/github_s/diverse_yeast/20221206_struct_align_dnds_msa_bens_cpu.sh
 
@@ -21,5 +28,5 @@ export SINGULARITY_BIND='/mnt/g/My Drive/Crick_LMS/projects/diverse_yeasts/alpha
 
 #Calculate tree quantities
 #singularity exec codeml.sif /home/heineike_wsl2/github_s/diverse_yeast/20230317_calculate_tree_quantities.sh
-singularity exec codeml.sif /home/heineike_wsl2/github_s/diverse_yeast/20230326_calculate_tree_quantities.sh
+#singularity exec codeml.sif /home/heineike_wsl2/github_s/diverse_yeast/20230326_calculate_tree_quantities.sh
 
