@@ -23,7 +23,8 @@ BASE_M1=${BASE_DIR}selection_calculations/m1/
 #OG4552_REF_Scer_AF-P37299-F1-model_v2 OG4555_REF_Scer_AF-P32799-F1-model_v2
 #OG4755_kluyveromyces_marxianus__OG4755__51_759 OG5006_kluyveromyces_marxianus__OG5006__51_4218
 #OG1275_REF_Scer_AF-P47052-F1-model_v2 OG1287_REF_Scer_AF-P37298-F1-model_v2 OG2006_REF_Scer_AF-P07257-F1-model_v2 OG2248_REF_Scer_AF-P07143-F1-model_v2 OG2704_REF_Scer_AF-P21801-F1-model_v2 OG2714_REF_Scer_AF-P00427-F1-model_v2 OG3208_REF_Scer_AF-P00128-F1-model_v2 OG3505_REF_Scer_AF-P04037-F1-model_v2 OG3575_REF_Scer_AF-P08067-F1-model_v2 OG4118_REF_Scer_AF-P07255-F1-model_v2 OG4352_REF_Scer_AF-P00127-F1-model_v2 OG4751_REF_Scer_AF-P04039-F1-model_v2 OG5490_REF_Scer_AF-P32340-F1-model_v2
-for OG_BASE in OG1254_REF_Scer_AF-Q01519-F1-model_v2 
+
+for OG_BASE in OG1299_REF_Scer_AF-P00549-F1-model_v2 OG1390_REF_Scer_AF-P47164-F1-model_v2 
 do 
     #DIR_OG_BASE=$(echo $TREE_FILE | cut -d '.' -f 1)
     #OG_BASE=$(echo $DIR_OG_BASE | cut -d '/' -f 9)
