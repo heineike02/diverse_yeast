@@ -269,8 +269,10 @@ def seq_squeeze(seq_in, all_outputs=True):
     #input: A string containing a sequence with dashes from a multiple sequence alignment
     #Output: 
     # seq_out - a string with a squeezed sequence with dashes removed
-    # seq_squeeze_reindex: a dictionary mapping indices from MSA to indices for the squeezed sequence (0 based)
-    # a mapping containing consecutive integers that link the index from the squeezed sequence to the corresponding indices of the msa.  
+    # msa2input: a dictionary mapping indices from MSA to indices for the squeezed sequence (0 based)
+    # input2msa: a dictionary mapping indices from input sequence to the MSA (0 based)
+    # pair_mapping - a mapping containing consecutive integers that link the index from the squeezed sequence to the corresponding indices of the msa.
+    # 
     
     seq_out = ''
     for res in seq_in:
@@ -278,13 +280,15 @@ def seq_squeeze(seq_in, all_outputs=True):
             seq_out = seq_out + res
     
     if all_outputs: 
-        seq_squeeze_reindex = {}
+        msa2input = {}
+        input2msa = {}
         seq_ind = 0
         #msa_ind_old = 0
         pair_mapping = []
         for msa_ind, res in enumerate(seq_in):
             if res != '-':
-                seq_squeeze_reindex[msa_ind] = seq_ind
+                msa2input[msa_ind] = seq_ind
+                input2msa[seq_ind] = msa_ind
                 if seq_ind>0:
                     seq_pair = (seq_ind-1,seq_ind)
                     msa_pair = (msa_ind_old,msa_ind)
@@ -296,10 +300,10 @@ def seq_squeeze(seq_in, all_outputs=True):
                 #print(seq_ind)
 
             else: 
-                seq_squeeze_reindex[msa_ind] = None
+                msa2input[msa_ind] = None
 
     
-        return seq_out, seq_squeeze_reindex, pair_mapping
+        return seq_out, msa2input, input2msa, pair_mapping
     
     else:
         return seq_out
@@ -496,7 +500,7 @@ def identify_ref_residue(og_ref, residues_of_interest):
             ref_ind = jj
 
     #Get map for reference sequence from msa index
-    ref_seq, msa2ref, pair_mapping = seq_squeeze(str(aln[ref_ind,:].seq))
+    ref_seq, msa2ref, ref2msa, pair_mapping = seq_squeeze(str(aln[ref_ind,:].seq))
     #msa2ref links the 0 based index of the alignment to the 0 based index of the reference sequence
 
     #after iteration need to read alignment in again
