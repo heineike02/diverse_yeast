@@ -6,8 +6,9 @@ cd ~/singularity-ce-3.11.4
 #Until I load singularity nothing goes into those directories
 export SINGULARITY_BIND='/mnt/g/My Drive/Crick_LMS/projects/diverse_yeasts/alphafold':/home/heineike/alphafold,/mnt/c/Users/heine/github:/home/heineike/github
 
+singularity exec codeml.sif /home/heineike/github/diverse_yeast/20230926_call_hyphy_busted.sh
 #singularity exec codeml.sif /home/heineike/github/diverse_yeast/20221206_struct_align_dnds_msa_bens_cpu.sh
-singularity exec codeml.sif /home/heineike/github/diverse_yeast/20230914_run_m0_subset.sh
+#singularity exec codeml.sif /home/heineike/github/diverse_yeast/20230914_run_m0_subset.sh
 
 #singularity exec codeml.sif /home/heineike_wsl2/github_s/diverse_yeast/20221206_struct_align_dnds_msa_bens_cpu.sh
 

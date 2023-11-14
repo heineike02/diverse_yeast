@@ -425,6 +425,77 @@ def Export_dn_ds_yn00(dnds1, output_file):
     return df1
 
 
+def load_m0_data(m0_base):
+    #Extracts m0 data from a folder containing folders with output from m0 calculations. 
+    og_list = []
+    og_ref_list = []
+    m0_data_out = {}
+
+    for og_ref in next(os.walk(m0_base))[1]:    #next(os.walk(m0_base))[0] gets just directories - https://stackoverflow.com/questions/141291/how-to-list-only-top-level-directories-in-python
+        #for og_ref in tm_align_post_trim_filter_list:
+        #og_ref = 'OG1299_REF_Scer_AF-P00549-F1-model_v2'
+        og = og_ref.split('_')[0]
+        og_ref_list.append(og_ref)
+        og_list.append(og)
+        #print(og_ref)
+        m0_dir = m0_base + og_ref + os.sep
+        output_file = m0_dir + 'm0.csv'
+        paml_gene_dn_ds_file = m0_dir +  'm0.out'
+
+        tree_length = None
+        kappa = None
+        dn_ds = None
+        tree_length_dN = None
+        tree_length_dS=None
+        convergence_issue = None
+
+        with open(paml_gene_dn_ds_file, 'r') as m0_out_data: 
+            for line in m0_out_data:
+                if 'TREE #' in line: 
+                    line = next(m0_out_data)
+                    convergence_issue = False
+                    if 'check convergence..' in line:
+                        print('convergence issue in ' + og_ref)
+                        convergence_issue = True              
+                    break
+
+            for line in m0_out_data:
+                if 'tree length =' in line: 
+                    tree_length = float(line.split('=')[1].strip())
+                    break
+
+            for line in m0_out_data:
+                if 'kappa' in line: 
+                    kappa = float(line.split('=')[1].strip())
+                    break
+
+            for line in m0_out_data:
+                if 'omega' in line: 
+                    dN_dS = float(line.split('=')[1].strip())
+                    break
+
+            for line in m0_out_data:
+                if 'tree length for dN:' in line: 
+                    tree_length_dN = float(line.split(':')[1].strip())
+                    break
+
+            for line in m0_out_data:
+                if 'tree length for dS:' in line: 
+                    tree_length_dS = float(line.split(':')[1].strip())
+                    break
+
+        if tree_length==None:
+            print('tree_length not found for ' + og_ref)
+        m0_data_out[og_ref] = (og, tree_length, kappa, dN_dS, tree_length_dN, tree_length_dS, convergence_issue)
+
+
+
+    m0_data_df = pd.DataFrame.from_dict(m0_data_out, orient='index', columns = ['og', 'tree_length', 'kappa', 'dN_dS_struct', 'tree_length_dN', 'tree_length_dS', 'convergence_issue'])
+
+    return m0_data_df
+
+
+
 def extract_beb_values(bs_rst_fname):
     #Extract Bayes Empirical Bayes Values for each residue in a Branch/Site test calculation
     site_classes = {1:'class_0', 
