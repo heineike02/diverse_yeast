@@ -3,7 +3,7 @@
 . /opt/conda/etc/profile.d/conda.sh
 conda activate diverse_yeast_env
 
-BASE_DIR=/home/heineike/alphafold/
+BASE_DIR=/home/heineikeb/alphafold/
 FEATURE=binding_site
 #/home/heineikeb/alphafold/
 #Before running, need to have made the feature directory and also added a control file into it called m0.ctl
@@ -21,7 +21,7 @@ BASE_M0=${BASE_DIR}selection_calculations/m0_features/${FEATURE}/
 #done
 #for TREE_FILE in /home/heineikeb/alphafold/msas/structural/tm_align/trees/OG*.tm.fasta.clipkit.treefile.renamed
 echo hello
-for ALN_FILE in /home/heineike/alphafold/msas/structural/tm_align/feature_subsets/${FEATURE}/fasta_renamed/OG*.tm.fasta
+for ALN_FILE in ${BASE_DIR}msas/structural/tm_align/feature_subsets/${FEATURE}/fasta_renamed/OG*.tm.fasta
 do 
     #Use these first four lines when iterating through the tree files
 

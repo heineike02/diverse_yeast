@@ -27,7 +27,6 @@ import shutil
 import numpy as np
 #from diverse_yeast_tools import seq_squeeze
 
-##Make seq squeeze function!!!
 def seq_squeeze(seq_in): 
     seq_out = ''
     for res in seq_in:
@@ -36,7 +35,7 @@ def seq_squeeze(seq_in):
 
     return seq_out
             
-base_dir = os.path.normpath('/home/heineike/alphafold')
+base_dir = os.path.normpath('/home/heineikeb/alphafold')
 aln_dir = base_dir + os.sep + os.path.normpath('msas/structural/tm_align') 
 
 feature = "binding_site"
