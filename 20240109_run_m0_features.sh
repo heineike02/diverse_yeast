@@ -4,13 +4,13 @@
 conda activate diverse_yeast_env
 
 BASE_DIR=/home/heineikeb/alphafold/
-FEATURE=binding_site
+FEATURE=uniprot_binding_site
 #/home/heineikeb/alphafold/
 #Before running, need to have made the feature directory and also added a control file into it called m0.ctl
 BASE_M0=${BASE_DIR}selection_calculations/m0_features/${FEATURE}/
 
-
-#for OG_BASE in OG1316_REF_Scer_AF-P19097-F1-model_v2
+#for OG_BASE in OG4352_REF_Scer_AF-P00127-F1-model_v2
+#OG1316_REF_Scer_AF-P19097-F1-model_v2
 #OG4150_REF_Scer_AF-P07256-F1-model_v2 OG2603_REF_Scer_AF-P50076-F1-model_v2 OG2845_REF_Scer_AF-P43577-F1-model_v2 OG3677_REF_Scer_AF-P47125-F1-model_v2 OG1299_REF_Scer_AF-P00549-F1-model_v2
 
 #OG4*.tm.fasta.clipkit.renamed
@@ -20,7 +20,6 @@ BASE_M0=${BASE_DIR}selection_calculations/m0_features/${FEATURE}/
 #    echo $A
 #done
 #for TREE_FILE in /home/heineikeb/alphafold/msas/structural/tm_align/trees/OG*.tm.fasta.clipkit.treefile.renamed
-echo hello
 for ALN_FILE in ${BASE_DIR}msas/structural/tm_align/feature_subsets/${FEATURE}/fasta_renamed/OG*.tm.fasta
 do 
     #Use these first four lines when iterating through the tree files

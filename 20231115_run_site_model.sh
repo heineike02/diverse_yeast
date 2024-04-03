@@ -9,11 +9,19 @@ BASE_SEL_CALC=${BASE_DIR}selection_calculations/site_model/
 
 
 #OG_BASE=OG1004_REF_Scer_AF-P40459-F1-model_v2
-for OG_BASE in  OG2006_REF_Scer_AF-P07257-F1-model_v2
+for OG_BASE in OG3575_REF_Scer_AF-P08067-F1-model_v2 OG4352_REF_Scer_AF-P00127-F1-model_v2 OG2714_REF_Scer_AF-P00427-F1-model_v2 OG4346_REF_Scer_AF-P10174-F1-model_v2 OG4751_REF_Scer_AF-P04039-F1-model_v2 OG1122_REF_Scer_AF-P13711-F1-model_v2
 
-#10 examples
-#OG4316_REF_Scer_AF-P00424-F1-model_v2 OG2248_REF_Scer_AF-P07143-F1-model_v2 OG3575_REF_Scer_AF-P08067-F1-model_v2 OG2006_REF_Scer_AF-P07257-F1-model_v2 OG4352_REF_Scer_AF-P00127-F1-model_v2 OG2714_REF_Scer_AF-P00427-F1-model_v2 OG4346_REF_Scer_AF-P10174-F1-model_v2 OG4751_REF_Scer_AF-P04039-F1-model_v2 OG1299_REF_Scer_AF-P00549-F1-model_v2 OG1122_REF_Scer_AF-P13711-F1-model_v2
-#for OG_BASE in OG4150_REF_Scer_AF-P07256-F1-model_v2 OG2603_REF_Scer_AF-P50076-F1-model_v2 OG2845_REF_Scer_AF-P43577-F1-model_v2 OG3677_REF_Scer_AF-P47125-F1-model_v2 OG1299_REF_Scer_AF-P00549-F1-model_v2
+#Examples: 
+
+#Complete
+#OG4316_REF_Scer_AF-P00424-F1-model_v2 
+
+#Failed to complete: 
+#OG2248_REF_Scer_AF-P07143-F1-model_v2
+
+
+#for OG_BASE in OG4150_REF_Scer_AF-P07256-F1-model_v2 OG2603_REF_Scer_AF-P50076-F1-model_v2 OG2845_REF_Scer_AF-P43577-F1-model_v2 OG3677_REF_Scer_AF-P47125-F1-model_v2 OG1299_REF_Scer_AF-P00549-F1-model_v2 
+#Also ran 2006 QCR 2 before 
 
 #OG4*.tm.fasta.clipkit.renamed
 #${BASE_DIR}msas/structural/tm_align/trees/
