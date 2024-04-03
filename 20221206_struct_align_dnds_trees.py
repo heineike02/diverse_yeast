@@ -124,4 +124,3 @@ with open(trees_log_fname, 'w') as trees_log:
 
         #else: 
         #   trees_log.write(alignment + ' has less than ' + str(min_seq) + ' sequences. No tree created.\n')
-

@@ -1,7 +1,4 @@
 #Using the same sequences as the structural alignment, make sequence based alignments using mafft and clustalo. 
-#Then: 
-#   1. Trim the alignments with standard parameters and assemble trees
-#   2. Make a strict trimming and prepare files for DN/DS calculations
 
 
 import os
