@@ -31,6 +31,14 @@ model_spec_lookup = {'Scer': 'saccharomyces_cerevisiae',
                      'Spom': 'schizosaccharomyces_pombe'
 }
 
+# import sys
+# #Should integrate this function into this package eventually
+# yeast_esr_exp_path = os.path.normpath('C:/Users/bheineike/Documents/GitHub/yeast_esr_expression_analysis') + os.sep
+# #io_library_path_core = io_library_path + 'core' + os.sep
+# if not(yeast_esr_exp_path in sys.path):
+#     sys.path.append(yeast_esr_exp_path)
+#     print("Added " + yeast_esr_exp_path + " to path" )
+# from yeast_esr_exp import read_SGD_features
 
 #Function to parse sequence id from first line of fasta file in either shen or uniprot proteomes. 
 
@@ -52,6 +60,26 @@ def gene_id_retrieve(study, seq_record):
     
     return(gene_id)
 
+def read_SGD_features(sgd_features_fname='G:/My Drive/Crick_LMS/external_data/genomes/saccharomyces_cerevisiae/SGD_features.tab'):
+    
+    #Read in orf/name file and make it a dictionary
+    # Gabe 7/12/16
+    # SC_features_fname = os.path.normpath(data_processing_dir + "\ortholog_files\\SGD_features.tab")
+    
+    #SC_features_fname = os.path.normpath(data_processing_dir + "/ortholog_files_regev/SGD_features.tab")
+    SC_features_fname = os.path.normpath(sgd_features_fname)
+
+    SC_features = pd.read_csv(SC_features_fname, sep = '\t', header=None)
+    SC_orfs = SC_features.groupby(1).get_group('ORF')
+    
+    #Makes a dictionary to look up orfs by gene names.  This won't include all orfs - those without names had NaN in column 4 so 
+    #are presumably left out. 
+    SC_orfs_lookup = dict(zip(SC_orfs[4], SC_orfs[3]))
+    SC_orfs_lookup[np.nan] = np.nan
+    SC_genename_lookup = dict(zip(SC_orfs[3], SC_orfs[4]))
+    SC_features_lookup = dict(zip(SC_orfs[3], SC_orfs[15]))
+       
+    return SC_orfs_lookup, SC_genename_lookup, SC_features_lookup
 
 def seq_record_fasta_printout(seq_records, f_out, gene_full_set, seqs_to_get, proteome_source, spec_orig_genome):
     
@@ -242,7 +270,7 @@ def load_model_swissprot_id_2_gene_id():
     return swissprot_id_2_gene_id
 
 def load_model_gene_id_2_swissprot_id():
-    #Lookup from swissprot_id to gene_id
+    #Lookup from gene_id to swissprot_id (uniprot). 
     #would prefer to use a more official source for these for S.cer and S.pom
 
     gene_id_2_swissprot_id= {}
@@ -425,74 +453,134 @@ def Export_dn_ds_yn00(dnds1, output_file):
     return df1
 
 
-def load_m0_data(m0_base):
+def load_m0_data(m0_base, branch_table_out=False):
     #Extracts m0 data from a folder containing folders with output from m0 calculations. 
+    #m0_base = base_dir + os.sep + os.path.normpath('selection_calculations/m0') + os.sep
+    #branch_table_out = True
+
     og_list = []
     og_ref_list = []
     m0_data_out = {}
 
+    if branch_table_out: 
+        branch_tables = {}
+
     for og_ref in next(os.walk(m0_base))[1]:    #next(os.walk(m0_base))[0] gets just directories - https://stackoverflow.com/questions/141291/how-to-list-only-top-level-directories-in-python
-        #for og_ref in tm_align_post_trim_filter_list:
+        ##for og_ref in tm_align_post_trim_filter_list:
         #og_ref = 'OG1299_REF_Scer_AF-P00549-F1-model_v2'
         og = og_ref.split('_')[0]
-        og_ref_list.append(og_ref)
-        og_list.append(og)
-        #print(og_ref)
-        m0_dir = m0_base + og_ref + os.sep
-        output_file = m0_dir + 'm0.csv'
-        paml_gene_dn_ds_file = m0_dir +  'm0.out'
+        if og[0:2] =='OG':
+            og_ref_list.append(og_ref)
+            og_list.append(og)
+            #print(og_ref)
+            m0_dir = m0_base + og_ref + os.sep
+            output_file = m0_dir + 'm0.csv'
+            paml_gene_dn_ds_file = m0_dir +  'm0.out'
 
-        tree_length = None
-        kappa = None
-        dn_ds = None
-        tree_length_dN = None
-        tree_length_dS=None
-        convergence_issue = None
+            columns_base = ['og', 'tree_length', 'kappa', 'dN_dS_struct', 'tree_length_dN', 'tree_length_dS', 'convergence_issue', 'dN_dS_found']
+            tree_length = None
+            kappa = None
+            dN_dS = None
+            tree_length_dN = None
+            tree_length_dS=None
+            convergence_issue = None
 
-        with open(paml_gene_dn_ds_file, 'r') as m0_out_data: 
-            for line in m0_out_data:
-                if 'TREE #' in line: 
-                    line = next(m0_out_data)
-                    convergence_issue = False
-                    if 'check convergence..' in line:
-                        print('convergence issue in ' + og_ref)
-                        convergence_issue = True              
-                    break
+            #Branch table
+            branch_table = None
 
-            for line in m0_out_data:
-                if 'tree length =' in line: 
-                    tree_length = float(line.split('=')[1].strip())
-                    break
+            #Branch_table summary quantities: 
+            branch_table_summary_columns = ['dN_mean', 'dN_std', 'dS_mean', 'dS_std']
+            dN_mean = None
+            dN_std = None
+            dS_mean = None
+            dS_std = None
 
-            for line in m0_out_data:
-                if 'kappa' in line: 
-                    kappa = float(line.split('=')[1].strip())
-                    break
+            with open(paml_gene_dn_ds_file, 'r') as m0_out_data: 
+                for line in m0_out_data:
+                    if 'TREE #' in line: 
+                        line = next(m0_out_data)
+                        convergence_issue = False
+                        if 'check convergence..' in line:
+                            print('convergence issue in ' + og_ref)
+                            convergence_issue = True              
+                        break
 
-            for line in m0_out_data:
-                if 'omega' in line: 
-                    dN_dS = float(line.split('=')[1].strip())
-                    break
+                for line in m0_out_data:
+                    if 'tree length =' in line: 
+                        tree_length = float(line.split('=')[1].strip())
+                        break
 
-            for line in m0_out_data:
-                if 'tree length for dN:' in line: 
-                    tree_length_dN = float(line.split(':')[1].strip())
-                    break
-
-            for line in m0_out_data:
-                if 'tree length for dS:' in line: 
-                    tree_length_dS = float(line.split(':')[1].strip())
-                    break
-
-        if tree_length==None:
-            print('tree_length not found for ' + og_ref)
-        m0_data_out[og_ref] = (og, tree_length, kappa, dN_dS, tree_length_dN, tree_length_dS, convergence_issue)
+                dN_dS_found = True
+                #This assumes that if there is no tree lenth found, then there is no further calculation
+                if tree_length==None:
+                    dN_dS_found = False
+                    print('dN_dS not calculated for' + og_ref)
 
 
+                if dN_dS_found: 
 
-    m0_data_df = pd.DataFrame.from_dict(m0_data_out, orient='index', columns = ['og', 'tree_length', 'kappa', 'dN_dS_struct', 'tree_length_dN', 'tree_length_dS', 'convergence_issue'])
+                    for line in m0_out_data:
+                        if 'kappa' in line: 
+                            kappa = float(line.split('=')[1].strip())
+                            break
 
-    return m0_data_df
+                    for line in m0_out_data:
+                        if 'omega' in line: 
+                            dN_dS = float(line.split('=')[1].strip())
+                            break
+
+                    if branch_table_out: 
+                        for line in m0_out_data: 
+                            if 'dN & dS for each branch' in line: 
+                                next(m0_out_data)
+                                line = next(m0_out_data)
+                                branch_table_headers = line.split()
+                                next(m0_out_data)
+                                line = next(m0_out_data)
+                                linesp = line.split()
+                                branch_table_data = []
+                                while len(linesp)==len(branch_table_headers): 
+                                    branch_table_data.append(linesp)
+                                    line = next(m0_out_data)
+                                    linesp=line.split()
+                                break
+                        branch_table = pd.DataFrame(branch_table_data, columns = branch_table_headers)
+                        #Make all columns except 'branch' numeric columns
+                        branch_table_headers_numeric = branch_table_headers.copy()
+                        branch_table_headers_numeric.remove('branch')
+                        for col in branch_table_headers_numeric: 
+                            branch_table[col] = pd.to_numeric(branch_table[col])
+                        dN_mean=np.mean(branch_table['dN'])
+                        dN_std=np.std(branch_table['dN'])
+                        dS_mean=np.mean(branch_table['dS'])
+                        dS_std=np.std(branch_table['dS'])
+
+                    for line in m0_out_data:
+                        if 'tree length for dN:' in line: 
+                            tree_length_dN = float(line.split(':')[1].strip())
+                            break
+
+                    for line in m0_out_data:
+                        if 'tree length for dS:' in line: 
+                            tree_length_dS = float(line.split(':')[1].strip())
+                            break
+
+                if branch_table_out: 
+                    m0_data_out[og_ref] = (og, tree_length, kappa, dN_dS, tree_length_dN, tree_length_dS, convergence_issue, dN_dS_found, dN_mean, dN_std, dS_mean, dS_std)
+                    branch_tables[og_ref] = branch_table
+                else: 
+                    m0_data_out[og_ref] = (og, tree_length, kappa, dN_dS, tree_length_dN, tree_length_dS, convergence_issue, dN_dS_found)
+        else: 
+            print('Folder ' + og_ref + ' does not contain dnds calculation')
+
+    if branch_table_out: 
+
+        m0_data_df = pd.DataFrame.from_dict(m0_data_out, orient='index', columns = columns_base + branch_table_summary_columns)
+        return m0_data_df, branch_tables
+
+    else: 
+        m0_data_df = pd.DataFrame.from_dict(m0_data_out, orient='index', columns = columns_base)
+        return m0_data_df
 
 
 
@@ -785,23 +873,85 @@ def get_branch_leaves(tree_node_labels, selected_node_name, og_name_map, marked_
     return branch_leaves_out
     
 def species_from_fasta_id(fasta_id):
-    #returns the species name given the fasta header (e.g. zygosaccharomyces_rouxii__OG2006__342_4561.pdb or Calb_AF-A0A1D8PDP8-F1-model_v2.pdb)
-    #Can also handle REF_zygosaccharomyces_rouxii__OG2006__342_4561.pdb, although that will only come from clusters with no Scer proteins. 
-
-
+    #Note:  Updated so it no longer takes .pdb. This may break some previous code. 
+    #Also updated so that it returns prot_id as well which may break previous code 
+    
+    #returns the species name given the fasta header (e.g. zygosaccharomyces_rouxii__OG2006__342_4561 or Calb_AF-A0A1D8PDP8-F1-model_v2)
+    #Can also handle REF_zygosaccharomyces_rouxii__OG2006__342_4561, although that will only come from clusters with no Scer proteins. 
 
     fasta_id_sp = fasta_id.split('_')
     if fasta_id_sp[0] in ['REF','Scer','Calb','Spom']:
         if fasta_id_sp[0] == 'REF':
             if fasta_id_sp[1] in ['Scer','Calb','Spom']: 
                 spec = model_spec_lookup[fasta_id_sp[1]]
+                prot_id = fasta_id_sp[2].split('-')[1]
             else:   
                 # ref is not Scer, Calb, Spom
                 print('REF seq is not Scer, Calb or Spom')
                 spec = '_'.join(fasta_id.split('__')[0].split('_')[1:3])
+                prot_id = fasta_id.split('__')[2]
         else:
             spec = model_spec_lookup[fasta_id_sp[0]]
+            prot_id = fasta_id_sp[1].split('-')[1]
     else: 
         spec = fasta_id.split('__')[0]
+        prot_id = fasta_id.split('__')[2]
 
-    return spec
+    return spec, prot_id
+
+def protein_id_shorten(old_name):
+    #Input the name without the .pdb suffix
+    
+    spec, protein_id = species_from_fasta_id(old_name)
+    if spec == 'yHMPu5000034957_hanseniaspora_osmophila_160519': 
+        spec = 'hanseniaspora_osmophila'
+    elif spec == 'yHMPu5000034604_sporopachydermia_lactativora_160519': 
+        spec = 'sporopachydermia_lactativora'
+                
+    new_name = spec + '__' + protein_id
+
+    return new_name    
+
+def make_model_organism_lookup_from_tm_align_og_ref(): 
+    #Make Lookup table for model organism genes to og_ref from tm_align clusters
+    
+    struct_aln_dir = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/fasta_renamed')
+
+    swissprot_id_to_gene_id = load_model_swissprot_id_2_gene_id()
+
+    og_refs =os.listdir(struct_aln_dir)
+
+    struct_align_cluster_gene_lists = {}
+    
+    SC_orfs_lookup, SC_genename_lookup, SC_features_lookup = read_SGD_features()
+    
+    for og_ref_fasta in og_refs:
+    #og_ref_fasta = og_refs[0]
+        og_ref = og_ref_fasta.split('.')[0]
+
+        full_seq_list = []
+        scer_seq_list = {'id': [], 'uniprot_id':[], 'genename': [], 'common_name': []}
+        #Would be good to have this for C. albicans and S. pombe as well. 
+
+        for record in SeqIO.parse(struct_aln_dir + os.sep + og_ref_fasta, 'fasta'): 
+            seq_id = record.id
+            full_seq_list.append(seq_id.split('.')[0])
+            #Test if sequence is an S.cer sequence.  If so extract the full id, uniprot_id, genename, and common_name
+
+            spec = species_from_fasta_id(seq_id)
+            if spec == 'saccharomyces_cerevisiae': 
+                scer_seq_list['id'].append(seq_id)
+                uniprot_id = seq_id.split('-')[1]
+                scer_seq_list['uniprot_id'].append(uniprot_id)
+                genename= swissprot_id_to_gene_id['Scer'][uniprot_id]
+                scer_seq_list['genename'].append(genename)
+                scer_seq_list['common_name'].append(SC_genename_lookup[genename])
+
+
+        struct_align_cluster_gene_lists[og_ref] = {'all_sequences': full_seq_list, 'scer_sequences': scer_seq_list} 
+
+    struct_align_cluster_gene_lists_fname = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/cluster_gene_lists.json')
+    with open(struct_align_cluster_gene_lists_fname, 'w') as f:
+        json.dump(struct_align_cluster_gene_lists, f, sort_keys=True, indent=4 )
+    
+    return struct_align_cluster_gene_lists
