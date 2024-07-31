@@ -2,11 +2,11 @@
 cd ~/singularity
 #export SINGULARITY_BIND='/mnt/g/My Drive/Crick_LMS/projects/diverse_yeasts/alphafold':/home/heineike_wsl2/alphafold,/mnt/c/Users/heineib/Documents/Github:/home/heineike_wsl2/github_s
 
-singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20230926_call_hyphy_busted.sh
+#singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20231115_run_site_model.sh
+#singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20231010_run_site_model.sh
+#singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20230926_call_hyphy_busted.sh
 #singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20221207_run_yn00.sh
 #singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20230913_struct_align_dnds_msas_binding_site.sh
-#singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20230926_run_m0_v2.sh
-#singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20230914_run_m0_subset.sh
 #singularity exec codeml.sif /home/heineike_wsl2/github_s/diverse_yeast/20221207_run_yn00.sh
 #singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20221206_struct_align_dnds_trees.sh
 #singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20221206_struct_align_dnds_msas.sh
@@ -17,3 +17,6 @@ singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20230926_call_h
 #singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20230110_seq_align.sh
 #singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20230324_seq_align_dnds_trees.sh
 #singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20230326_calculate_tree_quantities.sh
+#singularity exec codeml.sif /home/heineike_wsl2/github_s/diverse_yeast/20221207_run_yn00.sh
+#singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20240109_struct_align_dnds_msas_uniprot_binding_site.sh
+singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20240109_run_m0_features.sh
