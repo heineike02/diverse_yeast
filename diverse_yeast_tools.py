@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import json
+from collections import Counter
 import pickle
 import warnings
 from Bio import SeqIO
@@ -955,3 +956,166 @@ def make_model_organism_lookup_from_tm_align_og_ref():
         json.dump(struct_align_cluster_gene_lists, f, sort_keys=True, indent=4 )
     
     return struct_align_cluster_gene_lists
+
+
+def surface_core_analysis_untrimmed_to_trimmed(aln_trim_fname,surface_core_aligned_mat_untrimmed):
+    zerocolumns = False
+    aln_trimmed = AlignIO.read(open(aln_trim_fname),'fasta')
+    
+    #Load clipkit log
+    aln_trim_log_fname = aln_trim_fname + '.log'
+    aln_trim = AlignIO.read(open(aln_trim_fname),'fasta')
+    
+    record_order = []
+    for record in aln_trim:
+        record_order.append(record.id)
+        
+    aln_trim_log = pd.read_table(aln_trim_log_fname, sep=' ', header=None, index_col=0)
+    aln_trim_log.rename(columns={1:'trim',2:'note',3:'value'}, inplace=True)
+
+    #makes a zero-based list of indices of the original full alignment index for extracting the trimmed index
+    #trim_ind_2_orig_ind = {}
+    aln_trim_log_kept = aln_trim_log[aln_trim_log['trim']=='keep']
+    aln_trim_log_kept_list = []
+    for trim_ind, orig_ind in enumerate(aln_trim_log_kept.index): 
+        aln_trim_log_kept_list.append(orig_ind-1)
+        #trim_ind_2_orig_ind[trim_ind+1] = orig_ind
+
+    surface_core_aligned_mat = surface_core_aligned_mat_untrimmed[:,aln_trim_log_kept_list]
+    
+    core_column_pct = [] #Surface column pct will be 1-core column pct
+    column_occupancy = []
+    nspecs = surface_core_aligned_mat.shape[0]
+    for jj in range(surface_core_aligned_mat.shape[1]): 
+        col = surface_core_aligned_mat[:,jj]
+        col_count = Counter(col)
+        if (col_count['C']+col_count['S'])==0: 
+            zerocolumns = True  
+            core_column_pct.append(np.nan)
+        else: 
+            core_column_pct.append(col_count['C']/(col_count['C']+col_count['S']))
+        column_occupancy.append((nspecs-col_count['-'])/nspecs)
+    
+    if zerocolumns: 
+        print('at least one trimmed alignment column has no surface or core residues - may be empty')
+        
+    return core_column_pct, column_occupancy, surface_core_aligned_mat, record_order
+
+
+def surface_core_analysis_alignment(aln, og_surface_core_data):
+    #Given an untrimmed alignment, extracts the percentage of residues that are core, and the percentage of columns of the alignment that are occupied, and the full matrix with "I", "O", or "-" in each column.  
+    #Also provides the order of the proteins from the alignment which may not be the same as in the core/surface data
+    zerocolumns = False
+    
+    surface_core_aligned = []
+    record_order = []
+    for record in aln:
+        record_order.append(record.id)
+        seq_out, msa2input, input2msa, pair_mapping = seq_squeeze(record.seq)
+
+        surface_core_unaligned_prot = og_surface_core_data['protein_data'][record.id.split('.')[0]]['full_protein_assignment']
+
+        surface_core_aligned_prot = []
+
+        for jj, res in enumerate(record.seq): 
+            if res=='-': 
+                surface_core_aligned_prot.append('-')
+            else: 
+                surface_core_aligned_prot.append(surface_core_unaligned_prot[msa2input[jj]])
+
+        surface_core_aligned.append(surface_core_aligned_prot)
+
+    surface_core_aligned_mat = np.array(surface_core_aligned)
+
+    core_column_pct = [] #Surface column pct will be 1-core column pct
+    column_occupancy = []
+    nspecs = surface_core_aligned_mat.shape[0]
+    for jj in range(surface_core_aligned_mat.shape[1]): 
+        col = surface_core_aligned_mat[:,jj]
+        col_count = Counter(col)
+        if (col_count['C']+col_count['S'])==0: 
+            zerocolumns=True
+            core_column_pct.append(np.nan)
+        else: 
+            core_column_pct.append(col_count['C']/(col_count['C']+col_count['S']))
+        column_occupancy.append((nspecs-col_count['-'])/nspecs)
+    
+    if zerocolumns: 
+        print('alignment column has no surface or core residues - may be empty') 
+    
+    return core_column_pct, column_occupancy, surface_core_aligned_mat, record_order
+
+def extract_surface_core(og_summary, sasa_cut, dict_sasa_max):
+    #For a given protein lists how many are Core, Surface, Missing From Alignment, Not assigned 
+    #Would be good to check Oliver's alignment vs my alignment to make sure it is correct.  
+    #This should be something saved somewhere as a reference
+    
+    log = ''
+
+    og_surface_core_data = {}
+    og_surface_core_data['protein_data']={}
+
+    for prot_ind, prot_name in enumerate(og_summary['Molecules'].keys()): 
+        #prot_name = 'yHMPu5000034957_hanseniaspora_osmophila_160519__OG1316__247_2096'
+        #prot_ind = prot_ind_lookup[prot_name]
+        mol_sasa = og_summary['Molecules'][prot_name]['SASA']
+        mol_res = og_summary['Molecules'][prot_name]['Residues']
+
+        core_res_all = (mol_sasa/np.vectorize(dict_sasa_max.get)(mol_res))<sasa_cut
+        surface_res_all = (mol_sasa/np.vectorize(dict_sasa_max.get)(mol_res))>sasa_cut
+
+        #Initialize surface_core, a vector that indicates whether a residue in the sequence is, core, surface, or NA if not calculated 
+        surface_core = ['NA']*len(mol_res)
+
+        #surface_residues: 
+        for jj, surface_bool in enumerate(surface_res_all): 
+            if surface_bool: 
+                #seq_ind = mapping_ref_based_aln[jj]
+                surface_core[jj]= 'S'
+
+        #core_residues: 
+        for jj, core_bool in enumerate(core_res_all): 
+            if core_bool: 
+                #seq_ind = mapping_ref_based_aln[jj]
+                surface_core[jj]= 'C'
+
+        surface_core_count = Counter(surface_core)
+        
+        missing_core_surface = {'C','S'} - set(surface_core_count.keys())
+        
+        #check to see if either all Core or all Surface residues are missing:  
+        if len(missing_core_surface)>0: 
+            message = prot_name + ' missing ' + ' and '.join([feature_type for feature_type in list(missing_core_surface)])
+            print(message)
+            log = log + message + '\n'
+
+            for c_s in list(missing_core_surface):
+                surface_core_count[c_s] = 0
+
+        #Check that all residues for the protein in the ref_based alignment are assigned to either core or surface. 
+        assert len(mol_res) == (surface_core_count['S'] + surface_core_count['C']), 'Residue aligned to reference structure not assigned as core or surface'
+
+        
+        surface_core_pct = {}
+        for key, count in surface_core_count.items():
+            surface_core_pct[key] = count/len(mol_res)
+
+             #return surface_core_pct, surface_core_count, surface_core
+
+        og_surface_core_data['protein_data'][prot_name] = {'full_protein_assignment' : surface_core,
+                                          'full_protein_count': {'core': surface_core_count['C'], 'surface': surface_core_count['S']}, 
+                                          'full_protein_pct' :  {'core': surface_core_pct['C'], 'surface': surface_core_pct['S']}
+                                         }
+    
+    cores = []
+    surfaces = []
+
+    for key, data in og_surface_core_data['protein_data'].items(): 
+        #print(key)
+        cores.append(data['full_protein_pct']['core'])
+        surfaces.append(data['full_protein_pct']['surface'])
+
+    og_surface_core_data['core_mean'] = np.mean(cores)
+    og_surface_core_data['core_std'] = np.std(cores)
+        
+    return og_surface_core_data, log
