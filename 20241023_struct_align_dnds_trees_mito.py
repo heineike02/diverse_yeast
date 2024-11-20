@@ -13,15 +13,27 @@ import shutil
 base_dir = os.path.normpath('/home/heineikeb/alphafold')
 #os.path.normpath('/home/heineike_wsl2/alphafold') #Ben's computer
 
-aln_dir = base_dir + os.sep + os.path.normpath('msas/structural/tm_align') 
+aln_dir =  base_dir + os.sep + os.path.normpath('examples/etc/mitochondrial_sequences/pdbs')
 
-#use /tm_align/cds_aln to pick the aligments as that is post filtering for alignments that become very short upon trimming
-align_files = os.listdir(aln_dir + os.sep + 'cds_aln')  
-selected_alignments_all = [fname.split('.')[0] for fname in align_files]
+#Select all alignments as none of these are filtered out for length
+
+# #use /tm_align/cds_aln to pick the aligments as that is post filtering for alignments that become very short upon trimming
+# align_files = os.listdir(aln_dir + os.sep + 'cds_aln')  
+# selected_alignments_all = [fname.split('.')[0] for fname in align_files]
+
+dir_list = os.listdir(aln_dir)
+selected_alignments_all = []
+
+for fname in dir_list: 
+    name, ext = os.path.splitext(fname)
+    if ext=='.fasta':
+        selected_alignments_all.append(name)
+
 
 completed_alignments = [fname.split('.')[0] for fname in os.listdir(aln_dir + os.sep + 'trim_default')]
-
 selected_alignments = list(set(selected_alignments_all)-set(completed_alignments))
+
+
 
 #os.path.normpath('/home/heineike_wsl2/Crick_LMS/projects/diverse_yeasts/alphafold')
 # output_dir = base_dir + os.sep + os.path.normpath('selection_calculations/20220526_sel_calc')
@@ -43,7 +55,7 @@ with open(trees_log_fname, 'w') as trees_log:
         
         print('Trimming Alignment with default parameters')
         og = alignment.split('_')
-        og_pep_msa_fname = aln_dir + os.sep + 'fasta_renamed' + os.sep + alignment + '.tm.fasta'
+        og_pep_msa_fname = aln_dir + os.sep + alignment + '.fasta'
 
         #Verify that there are only sequences greater than or equal to min_seq. 
         og_pep_msa = SeqIO.parse(og_pep_msa_fname,'fasta')
@@ -96,24 +108,24 @@ with open(trees_log_fname, 'w') as trees_log:
                 fname_to = aln_dir + os.sep + os.path.normpath('trees/' + alignment + '.tm.fasta.clipkit.' + suffix)
                 shutil.move(fname_from_full, fname_to)
             
-        #Format phylogenetic Tree for codeml by shortening the name
+        # #Format phylogenetic Tree for codeml by shortening the name
 
-        # shorten name.  Uses seq_name_map made in in dnds_msas.py
-        print('Formatting tree for Codeml')
-        seq_name_map_fname = aln_dir + os.sep +  os.path.normpath('seq_name_map/' + alignment + '.tm.tsv')
+        # # shorten name.  Uses seq_name_map made in in dnds_msas.py
+        # print('Formatting tree for Codeml')
+        # seq_name_map_fname = aln_dir + os.sep +  os.path.normpath('seq_name_map/' + alignment + '.tm.tsv')
 
-        #Use phykit rename_tree_tips to shorten the name
-        tree_orig = aln_dir + os.sep + os.path.normpath('trees/' + alignment + '.tm.fasta.clipkit.treefile')
-        tree_renamed = tree_orig+'.renamed'
-        phykit_rename_cmd = ['phykit', 'rename_tree_tips',
-                         tree_orig,
-                         '-i', seq_name_map_fname, 
-                         '-o', tree_renamed
-                        ]
+        # #Use phykit rename_tree_tips to shorten the name
+        # tree_orig = aln_dir + os.sep + os.path.normpath('trees/' + alignment + '.tm.fasta.clipkit.treefile')
+        # tree_renamed = tree_orig+'.renamed'
+        # phykit_rename_cmd = ['phykit', 'rename_tree_tips',
+        #                  tree_orig,
+        #                  '-i', seq_name_map_fname, 
+        #                  '-o', tree_renamed
+        #                 ]
 
-        #print(" ".join(phykit_rename_cmd))
+        # #print(" ".join(phykit_rename_cmd))
 
-        subprocess.run(phykit_rename_cmd)
+        # subprocess.run(phykit_rename_cmd)
 
         #else: 
         #   trees_log.write(alignment + ' has less than ' + str(min_seq) + ' sequences. No tree created.\n')

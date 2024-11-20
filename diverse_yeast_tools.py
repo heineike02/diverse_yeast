@@ -164,9 +164,7 @@ def fasta_extract_shen(f_out, protein_dir, spec_orig_genome, y1000plus_dir, og_o
                         ' sim_score_vs_shen=' + sim_score_vs_shen + 
                         ' sim_score_vs_shen_diff=' + sim_score_vs_shen_diff + '\n')
             f_out.write(str(protein_seq) + '\n')  #I wonder why some of the bases were in lower case
-
             
-
 def load_model_protein_dict(spec_abbrev):
     #Load peptide sequences for model species, make dictionary from gene id to peptide sequence
     
@@ -337,7 +335,6 @@ def seq_squeeze(seq_in, all_outputs=True):
     else:
         return seq_out
 
-
 def load_model_og_lookup():
     #Make dictionary to look up og from gene_id for model species from og_metadatafile
     
@@ -415,8 +412,7 @@ def calMean_dN_dS_yn00(paml_gene_dn_ds_file, output_file, method="median dN_dS, 
             return max_dn_ds
         elif method == "median dN_dS, dN, dS":
             return (np.median(dn_ds[np.isfinite(dn_ds)]),np.median(dn[np.isfinite(dn)]),np.median(ds[np.isfinite(ds)]) )
-    
-        
+            
 def Export_dn_ds_yn00(dnds1, output_file):
     new_dnds = []
     colname1 = None
@@ -452,7 +448,6 @@ def Export_dn_ds_yn00(dnds1, output_file):
 
     df1.to_csv(output_file)
     return df1
-
 
 def load_m0_data(m0_base, branch_table_out=False):
     #Extracts m0 data from a folder containing folders with output from m0 calculations. 
@@ -583,8 +578,6 @@ def load_m0_data(m0_base, branch_table_out=False):
         m0_data_df = pd.DataFrame.from_dict(m0_data_out, orient='index', columns = columns_base)
         return m0_data_df
 
-
-
 def extract_beb_values(bs_rst_fname):
     #Extract Bayes Empirical Bayes Values for each residue in a Branch/Site test calculation
     site_classes = {1:'class_0', 
@@ -624,9 +617,300 @@ def extract_beb_values(bs_rst_fname):
 
     return neb_data
 
+def load_site_model_data(site_model_base, branch_table_out=False):
+    #Extracts output data from codeml from a folder containing folders with output from calculations using NSsites Models 0 (m0), 1 (NearlyNeutral), 3(PositiveSelection) calculations. 
+    #site_model_base = base_dir + os.sep + os.path.normpath('selection_calculations/site_model') + os.sep
+    #branch_table_out = True
+
+    og_list = []
+    og_ref_list = []
+
+    tests = ['m0','NearlyNeutral','PositiveSelection']
+
+    test_nclasses = {'NearlyNeutral': 2,
+                    'PositiveSelection': 3
+                    }
+
+    test_line_text = {'m0': 'NSsites Model 0: one-ratio', 
+                    'NearlyNeutral': 'NSsites Model 1: NearlyNeutral (2 categories)' ,
+                    'PositiveSelection': 'NSsites Model 2: PositiveSelection (3 categories)'}
+
+
+    columns_base = {'m0': ['og', 'mle', 'tree_length', 'kappa', 'dN_dS', 'tree_length_dN', 'tree_length_dS', 'convergence_issue', 'dN_dS_found'], 
+                    'NearlyNeutral': ['og','mle','tree_length', 'kappa', 'p_1', 'dN_dS_1', 'p_2', 'dN_dS_2', 'convergence_issue', 'dN_dS_found'],
+                    'PositiveSelection': ['og','mle','tree_length', 'kappa', 'p_1', 'dN_dS_1', 'p_2', 'dN_dS_2', 'p_3', 'dN_dS_3', 'convergence_issue', 'dN_dS_found']
+                    }
+
+    site_model_data_out = {test:{} for test in tests}
+    site_model_data_dfs = {test:{} for test in tests}
+
+    if branch_table_out: 
+        branch_tables = {test:{} for test in tests}
+
+    for og_ref in next(os.walk(site_model_base))[1]:    #next(os.walk(m0_base))[0] gets just directories - https://stackoverflow.com/questions/141291/how-to-list-only-top-level-directories-in-python
+        #         ##for og_ref in tm_align_post_trim_filter_list:
+
+        #og_ref = 'OG4555_REF_Scer_AF-P32799-F1-model_v2'  #example
+        og = og_ref.split('_')[0]
+        if og[0:2] =='OG':
+            og_ref_list.append(og_ref)
+            og_list.append(og)
+            #print(og_ref)
+            site_model_dir = site_model_base + og_ref + os.sep
+            output_files = {test:{site_model_dir + 'site_model_' + test + '.csv'} for test in tests},
+            paml_gene_dn_ds_file = site_model_dir +  'sm01278.out' #Note: filename is 01278, but most of the site model runs were just with models 0,1,2 because model 8 especially kept going into an infinite loop
+
+            for test in tests:
+            
+                #test = 'PositiveSelection'
+                site_model_data_out_test = site_model_data_out[test]
+                if branch_table_out: 
+                    branch_tables_test = branch_tables[test]
+
+
+                columns_base_test = columns_base[test]
+
+                data_out_test = {column: None for column in columns_base_test}
+                data_out_test['og']=og
+
+                # tree_length = None
+                # kappa = None
+                # dN_dS = None
+                # tree_length_dN = None
+                # tree_length_dS=None
+                # convergence_issue = None
+
+                #Branch table
+                branch_table = None
+
+                #Branch_table summary quantities: 
+                branch_table_summary_columns = ['dN_mean', 'dN_std', 'dS_mean', 'dS_std']
+                dN_mean = None
+                dN_std = None
+                dS_mean = None
+                dS_std = None
+
+                with open(paml_gene_dn_ds_file, 'r') as out_data: 
+                    for line in out_data: 
+                        if test_line_text[test] in line: 
+                            break
+                            #line=next(out_data)
+                    
+                    for line in out_data:
+                        if 'TREE #' in line: 
+                            line = next(out_data)
+                            data_out_test['convergence_issue'] = False
+                            if 'check convergence..' in line:
+                                print('convergence issue in ' + og_ref +' for ' + test + ' test.')
+                                data_out_test['convergence_issue'] = True              
+                                line = next(out_data)
+                            #get maximum likelihood estimate
+                            data_out_test['mle'] = float(line.split(':')[3].split()[0])
+                            break
+
+                    for line in out_data:
+                        if 'tree length =' in line: 
+                            data_out_test['tree_length'] = float(line.split('=')[1].strip())
+                            break
+
+                    data_out_test['dN_dS_found'] = True
+                    #This assumes that if there is no tree length found, or if the mle is nan, then there is no further calculation
+                    if data_out_test['tree_length']==None:
+                        data_out_test['dN_dS_found']= False
+                        print('dN_dS not calculated for ' + og_ref + ' test ' + test + ': Zero Tree length')
+                    elif np.isnan(data_out_test['mle']):
+                        data_out_test['dN_dS_found']= False
+                        print('dN_dS not calculated for ' + og_ref + ' test ' + test + ': mle is nan')
+
+                    if data_out_test['dN_dS_found']: 
+
+                        for line in out_data:
+                            if 'kappa' in line: 
+                                data_out_test['kappa'] = float(line.split('=')[1].strip())
+                                break
+
+                        if test=='m0':
+                            for line in out_data:
+                                if 'omega' in line: 
+                                    data_out_test['dN_dS'] = float(line.split('=')[1].strip())
+                                    break
+                        elif test in ['NearlyNeutral','PositiveSelection']:
+                            n_classes = test_nclasses[test]
+                            for line in out_data: 
+                                if 'p:' in line:  
+                                    for jj in range(1,n_classes + 1):
+                                        data_out_test['p_' + str(jj)] = float(line.split()[jj].strip())
+                                    break    
+
+                            for line in out_data: 
+                                if 'w:' in line:  
+                                    for jj in range(1,n_classes + 1):
+                                        data_out_test['dN_dS_' + str(jj)] = float(line.split()[jj].strip())
+                                    break
+                    
+
+                        if branch_table_out: 
+                            for line in out_data: 
+                                if 'dN & dS for each branch' in line: 
+                                    next(out_data)
+                                    line = next(out_data)
+                                    branch_table_headers = line.split()
+                                    next(out_data)
+                                    line = next(out_data)
+                                    linesp = line.split()
+                                    branch_table_data = []
+                                    while len(linesp)==len(branch_table_headers): 
+                                        branch_table_data.append(linesp)
+                                        line = next(out_data)
+                                        linesp=line.split()
+                                    break
+                            branch_table = pd.DataFrame(branch_table_data, columns = branch_table_headers)
+                            #Make all columns except 'branch' numeric columns
+                            branch_table_headers_numeric = branch_table_headers.copy()
+                            branch_table_headers_numeric.remove('branch')
+                            for col in branch_table_headers_numeric: 
+                                branch_table[col] = pd.to_numeric(branch_table[col])
+                            dN_mean=np.mean(branch_table['dN'])
+                            dN_std=np.std(branch_table['dN'])
+                            dS_mean=np.mean(branch_table['dS'])
+                            dS_std=np.std(branch_table['dS'])
+
+                        if test=='m0':
+                            for line in out_data:
+                                if 'tree length for dN:' in line: 
+                                    data_out_test['tree_length_dN'] = float(line.split(':')[1].strip())
+                                    break
+
+                            for line in out_data:
+                                if 'tree length for dS:' in line: 
+                                    data_out_test['tree_length_dS'] = float(line.split(':')[1].strip())
+                                    break
+
+                    if branch_table_out: 
+                        site_model_data_out_test[og_ref] = [value for key, value in data_out_test.items()] + [dN_mean, dN_std, dS_mean, dS_std]
+                        #og, tree_length, kappa, dN_dS, tree_length_dN, tree_length_dS, convergence_issue, dN_dS_found, dN_mean, dN_std, dS_mean, dS_std)
+                        branch_tables_test[og_ref] = branch_table
+                    else: 
+                        site_model_data_out_test[og_ref] = [value for key, value in data_out_test.items()]
+                        #(og, tree_length, kappa, dN_dS, tree_length_dN, tree_length_dS, convergence_issue, dN_dS_found)
+                site_model_data_out[test] = site_model_data_out_test
+                if branch_table_out: 
+                    branch_tables[test] = branch_tables_test
+        else: 
+            print('Folder ' + og_ref + ' does not contain dnds calculation')
+
+    if branch_table_out: 
+        for test in tests: 
+            site_model_data_dfs[test] = pd.DataFrame.from_dict(site_model_data_out[test], orient='index', columns = columns_base[test] + branch_table_summary_columns)
+        return site_model_data_dfs, branch_tables
+
+    else: 
+        for test in tests: 
+            site_model_data_dfs[test] = pd.DataFrame.from_dict(site_model_data_out[test], orient='index', columns = columns_base[test])
+        return site_model_data_dfs
+
+def parse_sitemodel_NEB_2(line):
+    #example line: 1 A   0.00000 1.00000 ( 2)  1.000'
+    linesp = line.split()
+    output =  (int(linesp[0]), linesp[1], float(linesp[2]), float(linesp[3]),linesp[5].strip(')'),float(linesp[6]))
+    return output
+
+def parse_sitemodel_NEB_3(line):
+    #example line: 1 A   0.00000 1.00000 0.00000 ( 2)  1.000  0.000
+    linesp = line.split()
+    if len(linesp)==9:  #If it passes the positive seleciton test, it looks like it calculates an extra value
+        output =  (int(linesp[0]), linesp[1], float(linesp[2]), float(linesp[3]), float(linesp[4]), linesp[6].strip(')'),float(linesp[7]),float(linesp[8]))
+    elif len(linesp)==8: 
+        output =  (int(linesp[0]), linesp[1], float(linesp[2]), float(linesp[3]), float(linesp[4]), linesp[6].strip(')'),float(linesp[7]),np.nan)
+    return output
+
+def parse_sitemodel_BEB_3(line):
+    #example line: 1 A   0.00000 1.00000 0.00000 ( 2)  1.000 +-  0.000
+    linesp = line.split()
+    output =  (int(linesp[0]), linesp[1], float(linesp[2]), float(linesp[3]), float(linesp[4]), linesp[6].strip(')'),float(linesp[7]), float(linesp[9]))
+    return output
+
+def extract_posterior_values_site_model(og_ref, site_model_dir, save_output=False):
+    #output is three tables.  NEB table for 2 classes, NEB table for 2 classes, BEB table for 3 classes
+
+    bs_rst_fname = site_model_dir + os.sep + og_ref + os.sep + 'rst'
+
+    #Extract Bayes Empirical Bayes Values for each residue in a Branch/Site test calculation
+
+    site_classes = {'NEB_2': {
+                        'classes' : ['1','2'], 
+                        'header' : 'Naive Empirical Bayes (NEB) probabilities for 2 classes & postmean_w',
+                        'columns' : ['strict_trim_ind','residue_first_seq','prob_purifying','prob_neutral','class','dN_dS'],
+                        'parse_function': parse_sitemodel_NEB_2
+                        },
+                    'NEB_3': {
+                        'classes' : ['1','2','3'], 
+                        'header' : 'Naive Empirical Bayes (NEB) probabilities for 3 classes & postmean_w',
+                        'columns' : ['strict_trim_ind','residue_first_seq','prob_purifying','prob_neutral', 'prob_positive','class','dN_dS','P(dN_dS>1)'],
+                        'parse_function': parse_sitemodel_NEB_3
+                        },
+                    'BEB_3': {
+                        'classes' : ['1','2','3'], 
+                        'header' : 'Bayes Empirical Bayes (BEB) probabilities for 3 classes (class) & postmean_w',
+                        'columns' : ['strict_trim_ind','residue_first_seq','prob_purifying','prob_neutral', 'prob_positive','class','dN_dS','P(dN_dS>1)'],
+                        'parse_function': parse_sitemodel_BEB_3
+                        }
+                    }
+
+    posterior_data = {}
+
+
+    #Naive Empirical Bayes (NEB) probabilities for 2 classes & postmean_w
+    #Naive Empirical Bayes (NEB) probabilities for 3 classes & postmean_w
+    #Bayes Empirical Bayes (BEB) probabilities for 3 classes (class) & postmean_w
+    #   1 A   0.00000 1.00000 0.00000 ( 2)  1.000 +-  0.000
+
+    with open(bs_rst_fname, 'r') as f_in: 
+        #result_file = open(bs_rst_file).readlines()
+
+        for site_class in ['NEB_2','NEB_3','BEB_3']:  #need to iterate in correct order given file format
+            (classes,header,columns, parse_function) = list(site_classes[site_class].values())
+            outputs = []
+            for line in f_in:
+                #print(line)
+                if header in line: 
+                    next(f_in)
+                    next(f_in)
+
+                    line = next(f_in)
+                    line_sp = line.split()
+                                
+                    while len(line_sp)>2:     
+                        output = parse_function(line)
+                        outputs.append(output)
+                        line = next(f_in)
+                        line_sp = line.split()
+                    break
+            
+            outputs_df = pd.DataFrame(outputs, columns=columns)
+            outputs_df.set_index('strict_trim_ind', inplace=True)
+
+            posterior_data[site_class] = outputs_df
+
+            if save_output:
+                outputs_df.to_csv(site_model_dir + os.sep + og_ref + os.sep + site_class + '.csv', na_rep='nan')
+
+            #Save outputs_df data as csv
+
+
+            #         while len(line_sp)==8:        
+            #             (ind, aa, class_0, class_1, class_2a, class_2b, paren, class_ind_paren) = line_sp
+            #             neb_data_tree[int(ind)] = (aa, float(class_0), float(class_1), float(class_2a), float(class_2b), float(class_2a)+float(class_2b), site_classes[int(class_ind_paren.split(')')[0])])
+            #             line = next(f_in)
+            #             line_sp = line.split()
+
+            #         neb_data[tree_no] = pd.DataFrame.from_dict(neb_data_tree, orient='index', columns=['ref_AA','class_0','class_1','class_2a','class_2b','class_2','pred_class'])
+
+    return posterior_data
+
 def identify_ref_residue(og_ref, residues_of_interest):
     #og_ref is the long name of the orthogroup you are interested in, e.g. 'OG1122_REF_Scer_AF-P13711-F1-model_v2'
-    #residues of interest a list of tuples with the index and single letter AA code of the residue of interest
+    #residues of interest a list of tuples with the index and single letter AA code of the residue of interest from the strictly trimmed alignment
 
     ref = '_'.join(og_ref.split('_')[1:])
 
@@ -654,7 +938,7 @@ def identify_ref_residue(og_ref, residues_of_interest):
     aln = AlignIO.read(open(aln_fname),'fasta')
     for (jj, record) in enumerate(aln): 
         if jj==0: 
-            paml_spec = species_from_fasta_id(record.id)
+            paml_spec = species_from_fasta_id(record.id)[0]
         #print(record.id.split('.')[0])
         if ref == record.id.split('.')[0]:
             ref_ind = jj
@@ -677,6 +961,7 @@ def identify_ref_residue(og_ref, residues_of_interest):
         if aa!=aln_trim[0,res-1]: 
             #Check if it is a CTG clade issue
             CTG_issue = False
+            print(paml_spec)
             if paml_spec in ctg_clade_dict.keys(): 
                 #If not raise an Error
                 clade= ctg_clade_dict[paml_spec]
@@ -787,7 +1072,6 @@ def load_tree_with_node_labels(m1_rst_fname):
         tree_node_labels = next(f_in).strip()
 
     return tree_node_labels
-
 
 def load_dn_ds_m1(m1_fname):
     #Loads table of DN DS values for each branch
@@ -957,7 +1241,6 @@ def make_model_organism_lookup_from_tm_align_og_ref():
     
     return struct_align_cluster_gene_lists
 
-
 def surface_core_analysis_untrimmed_to_trimmed(aln_trim_fname,surface_core_aligned_mat_untrimmed):
     zerocolumns = False
     aln_trimmed = AlignIO.read(open(aln_trim_fname),'fasta')
@@ -1000,7 +1283,6 @@ def surface_core_analysis_untrimmed_to_trimmed(aln_trim_fname,surface_core_align
         print('at least one trimmed alignment column has no surface or core residues - may be empty')
         
     return core_column_pct, column_occupancy, surface_core_aligned_mat, record_order
-
 
 def surface_core_analysis_alignment(aln, og_surface_core_data):
     #Given an untrimmed alignment, extracts the percentage of residues that are core, and the percentage of columns of the alignment that are occupied, and the full matrix with "I", "O", or "-" in each column.  
@@ -1119,3 +1401,55 @@ def extract_surface_core(og_summary, sasa_cut, dict_sasa_max):
     og_surface_core_data['core_std'] = np.std(cores)
         
     return og_surface_core_data, log
+
+def load_hyphy_busted_data(hyphy_base_dir):
+    # Extract Hyphy busted data from a directory base containing outputs
+
+    og_list = []
+    og_ref_list = []
+    hyphy_data_out = {}
+    partitions = ['0','1','2']
+    partition_label = {'0':'low', '1':'med', '2': 'high'}
+
+    for og_ref in next(os.walk(hyphy_base_dir))[1]:    
+        #next(os.walk(m0_base))[0] gets just directories - https://stackoverflow.com/questions/141291/how-to-list-only-top-level-directories-in-python
+        #og_ref = 'OG1299_REF_Scer_AF-P00549-F1-model_v2'
+        og = og_ref.split('_')[0]
+        og_ref_list.append(og_ref)
+        og_list.append(og)
+        #print(og_ref)
+        hyphy_dir = hyphy_base_dir + og_ref + os.sep
+
+        hyphy_json = hyphy_dir + 'hyphy_busted.json'
+        
+        try: 
+            with open(hyphy_json, 'r') as f:
+                hyphy_data = json.load(f) 
+
+            average_omega = 0
+            average_rate = 0
+
+            unconstrained_model_data = hyphy_data['fits'][ 'Unconstrained model']['Rate Distributions']
+
+            output_data = {}
+            for partition in partitions: 
+                output_data['omega_' + partition_label[partition]] = unconstrained_model_data['Test'][partition]['omega']
+                output_data['omega_' + partition_label[partition] + '_proportion'] = unconstrained_model_data['Test'][partition]['proportion']
+                output_data['rate_' + partition_label[partition]] = unconstrained_model_data['Synonymous site-to-site rates'][partition]['rate']
+                output_data['rate_' + partition_label[partition] + '_proportion'] = unconstrained_model_data['Synonymous site-to-site rates'][partition]['proportion']
+                output_data['pvalue'] = hyphy_data['test results']['p-value']
+                average_omega = average_omega + output_data['omega_' + partition_label[partition]]*output_data['omega_' + partition_label[partition] + '_proportion']
+                average_rate = average_rate + output_data['rate_' + partition_label[partition]]*output_data['rate_' + partition_label[partition] + '_proportion']
+
+            output_data['omega_avg']=average_omega
+            output_data['rate_avg']= average_rate
+
+            hyphy_data_out[og_ref] = output_data
+        
+        except FileNotFoundError:
+            print(og_ref + ' has no hyphy BUSTED output')
+            
+
+    hyphy_data_df = pd.DataFrame.from_dict(hyphy_data_out, orient='index')
+
+    return hyphy_data_df
