@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import scipy.stats as stats
 import pandas as pd
 import json
 from collections import Counter
@@ -1014,7 +1015,7 @@ def identify_ref_residue(og_ref, residues_of_interest):
     
     return ref_res_of_int, aln_res_of_int, ref_seq
 
-def write_marked_trees(labeled_trees_fname, tree_node_labels, nodes_to_label):
+def write_marked_trees(labeled_trees_fname, tree_node_labels, nodes_to_label, write_file=True):
     #write a file with trees marked
     #Also returns a Dataframe which has node labels next to orthogroup labels
 
@@ -1052,13 +1053,14 @@ def write_marked_trees(labeled_trees_fname, tree_node_labels, nodes_to_label):
     for node in t_node_label.iter_leaves(): 
         node.name = node_rename_dict[node.name]
 
-    with open(labeled_trees_fname,'w') as f_out: 
-        f_out.write('  ' + str(len(t_node_label.get_leaf_names())) + '  ' + str(len(nodes_to_label)) + '\n')
+    if write_file: 
+        with open(labeled_trees_fname,'w') as f_out: 
+            f_out.write('  ' + str(len(t_node_label.get_leaf_names())) + '  ' + str(len(nodes_to_label)) + '\n')
 
-        for node in nodes_to_label: 
-            t_node_label_marked = t_node_label.copy()
-            t_node_label_marked.mark_tree([str(id_paml_2_id_ete[node])],marks = ['#1'])
-            f_out.write(t_node_label_marked.write() + '\n')
+            for node in nodes_to_label: 
+                t_node_label_marked = t_node_label.copy()
+                t_node_label_marked.mark_tree([str(id_paml_2_id_ete[node])],marks = ['#1'])
+                f_out.write(t_node_label_marked.write() + '\n')
             
     return node_id_df
 
@@ -1094,6 +1096,67 @@ def load_dn_ds_m1(m1_fname):
 
     return data_df
 
+def m1_hits(og_refs, dn_ds_thresh, max_branches_to_test, save_results = True):
+    #og_refs: dictionary of gene name and og_refs which have had M1 analysis performed
+    #dn_ds_thresh: threshold of dn/ds for a branch to be tested
+    #max_branches_to_test: maximum number of branches to test
+
+
+    marked_tree_branch_info = {}
+    hits_tables = {}
+    branch_leaves = {}
+
+    for goi, og_ref in og_refs.items(): 
+        #etc_og_refs.items(): 
+        print(goi)
+        #Load tree with node labels
+        m1_rst_fname = base_dir + os.sep + os.path.normpath('selection_calculations/m1/' + og_ref + '/rst')
+        tree_node_labels = load_tree_with_node_labels(m1_rst_fname)
+
+        #Load table of M1 values
+        m1_fname = base_dir + os.sep + os.path.normpath('selection_calculations/m1/' + og_ref + '/m1.out')
+        dn_ds_table = load_dn_ds_m1(m1_fname)
+        
+        #Load map of og names
+        og_name_map_fname = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/seq_name_map/' + og_ref + '.tm.tsv')
+        og_name_map = pd.read_table(og_name_map_fname)
+        
+        #Identify Nodes with high DN/DS
+        hits_table = dn_ds_table[dn_ds_table['dN/dS']>dn_ds_thresh].sort_values(by='dN/dS', ascending=False)
+        print('Total branches above threshold: ' + str(len(hits_table)))
+        if len(hits_table)>max_branches_to_test: 
+            print('More than ' + str(max_branches_to_test) + ' candidate branches for positive selection, selecting top ' + str(max_branches_to_test) + '. og_ref: ' + og_ref)
+            branches_to_test = hits_table.index[0:max_branches_to_test]
+        else: 
+            branches_to_test = hits_table.index
+
+        hits_table = hits_table.loc[branches_to_test] # truncate hits table
+        
+        nodes_to_label = [branch.split('..')[1] for branch in hits_table.index]
+        
+        hits_table['labelled_node'] = nodes_to_label
+        
+        hits_tables[goi] = hits_table
+
+        #Make file with trees labeling the indicated branches
+        labeled_trees_fname = base_dir + os.sep + os.path.normpath('selection_calculations/branch_site/trees/' + og_ref + '.bs_trees')
+        marked_tree_branch_info_goi = write_marked_trees(labeled_trees_fname, tree_node_labels, nodes_to_label, write_file = save_results)
+        marked_tree_branch_info[goi] = marked_tree_branch_info_goi
+        
+        branch_leaves_goi = {}
+        for jj, selected_node_name in enumerate(nodes_to_label): 
+            tree_no = jj + 1
+            branch_leaves_goi[tree_no] = get_branch_leaves(tree_node_labels, selected_node_name, og_name_map, marked_tree_branch_info_goi)
+        branch_leaves[goi] = branch_leaves_goi
+
+
+    #Save hits tables in csv files:
+    if save_results: 
+        for goi, hits_table in hits_tables.items():
+            hits_table.to_csv( base_dir + os.sep + os.path.normpath('selection_calculations/branch_site/m1_hits_' + goi + '.csv'))
+    
+    return hits_tables, branch_leaves, marked_tree_branch_info
+
 def extract_ML_est_BS(bs_fname):
     #output: dictionary of tree_number: (ML values, number beside ML value related to variability of estimate, flag for check convergence issues)
 
@@ -1114,6 +1177,111 @@ def extract_ML_est_BS(bs_fname):
                 ml_data_out[tree_no] = (float(ml_line_sp[0]), float(ml_line_sp[1]), check_conv_flag)
     
     return ml_data_out
+
+def parse_branch_site(og_refs, chi2_thresh, beb_val_thresh, p_adj_thresh, hits_tables, branch_leaves): 
+    #og_refs = {'POX1': 'OG1122_REF_Scer_AF-P13711-F1-model_v2'}
+    #chi2_thresh: Chi2 with 50:50 mixture of point mass 0 has critical values of 5% at 2.71 and 5.41 at 1%.   (page 30 of manual)
+    #    For this, a p-value is calculated by putting the test statistic into 1-CDF and dividing by two.  
+    #    Normal Chi2 has critical values 3.84 and 5.99 this is what they recommend
+    #    p_adj is obtained using stats.false_discovery_control for the p-values obtained for each orthogroup.  
+    #
+    #beb_val_thresh:  Bayes Empirical value for probability that a residue is positively selected.  Sometimes this value has a high baseline.  
+    # 
+    #p_adj_thresh: Adjusted p_value threshold
+    #
+    #Need to initialize branch_leaves and hit_tables with m1_hits
+    #
+    #Also hits tables are saved in the branch site folder
+    # hits_tables = {}
+    # for goi, og_ref in og_refs.items():
+    #     hits_tables[goi] = pd.read_csv( base_dir + os.sep + os.path.normpath('selection_calculations/branch_site/m1_hits_' + goi + '.csv'))
+
+
+
+    bs_analysis_data = {
+                'chi2_thresh': chi2_thresh,
+                'beb_val_thresh': beb_val_thresh,
+                'p_adj_thresh': p_adj_thresh
+    }
+
+
+    for goi, og_ref in og_refs.items(): 
+        #goi='QCR2'
+        print(goi)
+        bs_analysis_data_goi = {}
+        #og_ref = etc_og_refs[goi]
+
+        bs_rst_file = base_dir + os.sep + os.path.normpath('selection_calculations/branch_site/' + og_ref + '/A/rst')
+        beb_vals = extract_beb_values(bs_rst_file)
+
+        bsa_dir = base_dir + os.sep + os.path.normpath('selection_calculations/branch_site/' + og_ref)
+
+        bsa_fname = bsa_dir + os.sep + os.path.normpath('A/BSA.out')
+
+        ml_data_A = extract_ML_est_BS(bsa_fname)
+
+        bsafix1_fname = bsa_dir + os.sep + os.path.normpath('Afix1/BSAfix1.out')
+        ml_data_Afix1 = extract_ML_est_BS(bsafix1_fname)
+
+        p_vals = []
+        tree_order = []
+        for jj, (tree_no, ml_data_A_tree) in enumerate(ml_data_A.items()):
+            tree_order.append(tree_no)
+            mlA = ml_data_A_tree[0]
+            mlA_check_conv = ml_data_A_tree[2]
+            mlAfix1 = ml_data_Afix1[tree_no][0]
+            mlAfix1_check_conv = ml_data_Afix1[tree_no][2]
+            bs_stat = 2*(mlA-mlAfix1)
+            p_val = (1-stats.chi2.cdf(bs_stat,1))/2
+            p_vals.append(p_val)
+            bs_analysis_data_goi[tree_no] = {'branch_site_stats': 
+                                                    {
+                                                        'mlA': mlA, 
+                                                        'mlA_check_convergence':mlA_check_conv,
+                                                        'mlAfix1': mlAfix1,
+                                                        'mlAfix1_check_convergence':mlAfix1_check_conv,
+                                                        'bs_stat': bs_stat,
+                                                        'sig_flag_chi2': bs_stat>chi2_thresh,
+                                                        'p_val': p_val 
+                                                    }
+                                            }
+
+        #get p_adj using p_vals
+        p_adj = stats.false_discovery_control(p_vals)
+
+        for jj, tree_no in enumerate(tree_order):
+            bs_analysis_data_goi[tree_no]['branch_site_stats']['p_adj'] = p_adj[jj]
+            bs_analysis_data_goi[tree_no]['branch_site_stats']['sig_flag_p_adj'] = bool(p_adj[jj]<p_adj_thresh)
+
+        for jj, (branch, row) in enumerate(hits_tables[goi].iterrows()): 
+            tree_no = jj+1
+            bs_analysis_data_goi[tree_no]['branch_label'] = branch
+            bs_analysis_data_goi[tree_no]['labelled_node'] = row['labelled_node']
+            bs_analysis_data_goi[tree_no]['branch_site_stats']['m1_dnds'] = row['dN/dS']
+            bs_analysis_data_goi[tree_no]['branch_site_stats']['m1_dn'] = row['dN']
+            bs_analysis_data_goi[tree_no]['branch_site_stats']['m1_ds'] = row['dS']
+
+        #For each tree add leaf data from bs_analysis_data_goi and extract beb values to identify residues of interest
+        for tree_no, branch_leaves_tree in branch_leaves[goi].items():
+            bs_analysis_data_goi[tree_no]['leaf_data'] = branch_leaves_tree
+
+            beb_vals_tree = beb_vals[tree_no]
+            beb_vals_filt = beb_vals_tree[beb_vals_tree['class_2']>beb_val_thresh]
+            residues_of_interest = list(zip(beb_vals_filt.index,beb_vals_filt['ref_AA']))
+            pos_sel_res_ref, pos_sel_res_aln, ref_seq = identify_ref_residue(og_ref, residues_of_interest)
+
+            bs_analysis_data_goi[tree_no]['site_data'] = {
+                    'pos_sel_res_paml': [ind_res[1] + str(ind_res[0]) for ind_res in residues_of_interest], ####
+                    'pos_sel_res_aln': pos_sel_res_aln,
+                    'pos_sel_res_ref': pos_sel_res_ref,
+                    'beb_score': list(beb_vals_filt['class_2'])
+                }
+
+
+
+            bs_analysis_data[goi] = bs_analysis_data_goi
+    
+    return bs_analysis_data
 
 def get_branch_leaves(tree_node_labels, selected_node_name, og_name_map, marked_tree_branch_info_goi):
     #For a given branch site tree and a selected node name, output 
@@ -1140,7 +1308,7 @@ def get_branch_leaves(tree_node_labels, selected_node_name, og_name_map, marked_
     leaves_long = list(og_name_map[og_name_map['seq_no'].isin(leaves_short)]['seq_name']) #keeping .pdb label
     specs_non_unique = []
     for seq_name in leaves_long: 
-        spec = species_from_fasta_id(seq_name)
+        spec, prot_id = species_from_fasta_id(seq_name.split('.pdb')[0]) # drop .pdb label for this
         specs_non_unique.append(spec)
 
     specs = list(set(specs_non_unique))
