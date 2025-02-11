@@ -1,0 +1,43 @@
+open 3pym fromDatabase pdb format mmcif
+set bgColor white
+color #1 dark gray
+hide #1 atoms
+select :MRY
+hide sel atoms
+select :NA
+hide sel atoms
+select :NAD
+show sel surfaces
+color sel #ead47c
+#TDH2
+open "G:/My Drive/Crick_LMS/projects/diverse_yeasts/alphafold/selected_proteins/pdbs/Alphafold_ranked_0_PDB/structures_full/OG1145/REF_Scer_AF-P00358-F1-model_v2.pdb" 
+#TDH3
+open "G:/My Drive/Crick_LMS/projects/diverse_yeasts/alphafold/selected_proteins/pdbs/Alphafold_ranked_0_PDB/structures_full/OG1145/REF_Scer_AF-P00359-F1-model_v2.pdb" 
+#TDH1
+open "G:/My Drive/Crick_LMS/projects/diverse_yeasts/alphafold/selected_proteins/pdbs/Alphafold_ranked_0_PDB/structures_full/OG1145/REF_Scer_AF-P00360-F1-model_v2.pdb"
+matchmaker #2/A to #1/A pairing ss
+matchmaker #3/A to #1/A pairing ss
+color #3 #98e271
+matchmaker #4/A to #1/A pairing ss
+
+open 4wni fromDatabase pdb
+matchmaker #!5 to #1
+
+
+select #3/A:101,125,223,139,65,67,131,23,92,269
+color sel magenta
+show sel surfaces
+select #3:22,87
+color sel cyan
+show sel surfaces
+
+select #3/A:11,12,33,120,314,318,149-151,180,209,210,232,177
+color sel red
+show sel surfaces
+
+select #3/A:154,312,151
+color sel orange
+show sel surfaces
+
+open "G:/My Drive/Crick_LMS/projects/diverse_yeasts/alphafold/selected_proteins/pdbs/Alphafold_ranked_0_PDB/structures_full/OG1145/yarrowia_lipolytica__OG1145__144_2433.pdb"
+color #6 #8b9cff
