@@ -6,6 +6,9 @@ cd ~/singularity-ce-4.0.1
 #Until I load singularity nothing goes into those directories
 #echo here
 
+#Needed to mount google drive before running this
+#sudo mount -t drvfs G: /mnt/g  
+
 export SINGULARITY_BIND='/mnt/g/My Drive/Crick_LMS/projects/diverse_yeasts/alphafold':/home/heineike/alphafold,'/mnt/c/Documents and Settings/bheineike/Documents/GitHub':/home/heineike/github
 
 #singularity exec codeml.sif /home/heineike/github/diverse_yeast/20230926_call_hyphy_busted.sh
@@ -38,4 +41,7 @@ export SINGULARITY_BIND='/mnt/g/My Drive/Crick_LMS/projects/diverse_yeasts/alpha
 #singularity exec codeml.sif /home/heineike/github/diverse_yeast/20231110_run_m0_complete_trim.sh
 
 #Calculate tree for example orthogroup
-singularity exec codeml.sif /home/heineike/github/diverse_yeast/20240215_full_og_tree.sh
+#singularity exec codeml.sif /home/heineike/github/diverse_yeast/20240215_full_og_tree.sh
+
+#Run evcoupling
+singularity exec codeml.sif /home/heineike/github/diverse_yeast/20250122_evcoupling.sh

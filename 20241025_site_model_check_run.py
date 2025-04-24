@@ -5,6 +5,7 @@ import pandas as pd
 #base_dir = "/home/heineike/alphafold_ln"
 #base_dir = os.path.normpath('G:/My Drive/Crick_LMS/projects/diverse_yeasts/alphafold')
 base_dir = "/home/heineikeb/alphafold"
+
 selection_calc_dir = base_dir + os.sep + os.path.normpath('selection_calculations/site_model')
 
 cds_list_raw = os.listdir(base_dir + os.sep + os.path.normpath('msas/structural/tm_align/cds_trim_strict'))
@@ -48,4 +49,4 @@ with open(f_out_fname,'w') as f_out:
         f_out.write(og_ref + '\n')
 
 
-
+#Also should filter out list that didn't even converge for M0

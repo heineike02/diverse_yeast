@@ -64,7 +64,6 @@ with open(trees_log_fname, 'w') as trees_log:
         og_pep_msa = SeqIO.parse(og_pep_msa_fname,'fasta')
         nseqs = len(list(og_pep_msa))    
         
-        
         assert nseqs>=min_seq, alignment + ' has less than ' + str(min_seq) + 'sequences' 
 
         #trim alignment with default settings and outputs log file
