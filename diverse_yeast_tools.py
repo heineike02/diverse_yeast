@@ -83,6 +83,25 @@ def read_SGD_features(sgd_features_fname='G:/My Drive/Crick_LMS/external_data/ge
        
     return SC_orfs_lookup, SC_genename_lookup, SC_features_lookup
 
+def parse_pathway_list(pathway_list_str):
+    if len(pathway_list_str)>0:
+        if pathway_list_str[0]=='[':
+            #parse list: 
+            pathway_list = pathway_list_str.strip("[]'").split(',')
+            if len(pathway_list)>1:
+                print('Warning: more than one pathway for a gene')
+            if pathway_list[0]=='':
+                print('No_pathway in pathway_list_str, returning None')
+                return None
+            else: 
+                return pathway_list[0]
+        else: 
+            print('pathway_list_str not a list, returning None')
+            return None
+    else:
+        print('pathway_list_str is empty string, returning None')
+        return None
+
 def seq_record_fasta_printout(seq_records, f_out, gene_full_set, seqs_to_get, proteome_source, spec_orig_genome):
     
     for seq_record in seq_records:
@@ -1365,8 +1384,9 @@ def protein_id_shorten(old_name):
 
     return new_name    
 
-def make_model_organism_lookup_from_tm_align_og_ref(): 
+def make_model_organism_lookup_from_tm_align_og_ref(save_json=False): 
     #Make Lookup table for model organism genes to og_ref from tm_align clusters
+    #Also makes cluster_gene_lists.json which lists all gene ids for all clusters. 
     
     struct_aln_dir = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/fasta_renamed')
 
@@ -1404,8 +1424,9 @@ def make_model_organism_lookup_from_tm_align_og_ref():
         struct_align_cluster_gene_lists[og_ref] = {'all_sequences': full_seq_list, 'scer_sequences': scer_seq_list} 
 
     struct_align_cluster_gene_lists_fname = base_dir + os.sep + os.path.normpath('msas/structural/tm_align/cluster_gene_lists.json')
-    with open(struct_align_cluster_gene_lists_fname, 'w') as f:
-        json.dump(struct_align_cluster_gene_lists, f, sort_keys=True, indent=4 )
+    if save_json: 
+        with open(struct_align_cluster_gene_lists_fname, 'w') as f:
+            json.dump(struct_align_cluster_gene_lists, f, sort_keys=True, indent=4 )
     
     return struct_align_cluster_gene_lists
 

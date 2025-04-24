@@ -1,0 +1,17 @@
+set bgColor white
+open "G:/My Drive/Crick_LMS/projects/diverse_yeasts/alphafold/selected_proteins/pdbs/Alphafold_ranked_0_PDB/structures_full/OG1055/REF_Scer_AF-P52910-F1-model_v2.pdb" 
+color #1 #ead47c
+open "G:/My Drive/Crick_LMS/projects/diverse_yeasts/alphafold/selected_proteins/pdbs/Alphafold_ranked_0_PDB/structures_full/OG1055/REF_Scer_AF-Q01574-F1-model_v2.pdb" 
+color #2 #98e271
+open "G:/My Drive/Crick_LMS/projects/diverse_yeasts/alphafold/selected_proteins/pdbs/Alphafold_ranked_0_PDB/structures_full/OG1055/kluyveromyces_lactis__OG1055__50_1591.pdb" 
+color #3 #89d2e2
+
+alphafold fetch Q9Y7B5
+
+
+matchmaker #2/A to #1/A pairing ss
+matchmaker #3/A to #1/A pairing ss
+matchmaker #4/A to #1/A pairing ss
+
+select #1/A: 544-683
+color sel red
