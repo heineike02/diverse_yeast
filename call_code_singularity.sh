@@ -1,8 +1,8 @@
 #!/bin/bash
+
 cd ~/singularity
 #export SINGULARITY_BIND='/mnt/g/My Drive/Crick_LMS/projects/diverse_yeasts/alphafold':/home/heineike_wsl2/alphafold,/mnt/c/Users/heineib/Documents/Github:/home/heineike_wsl2/github_s
 
-#singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20231115_run_site_model.sh
 #singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20231010_run_site_model.sh
 #singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20230926_call_hyphy_busted.sh
 #singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20221207_run_yn00.sh
@@ -20,3 +20,5 @@ singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20221214_run_BS
 #singularity exec codeml.sif /home/heineike_wsl2/github_s/diverse_yeast/20221207_run_yn00.sh
 #singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20240109_struct_align_dnds_msas_uniprot_binding_site.sh
 #singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20240109_run_m0_features.sh
+#singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20240916_struct_align_dnds_msas_core_surface.sh
+#singularity exec codeml.sif /home/heineikeb/github/diverse_yeast/20241023_struct_align_dnds_trees_mito.sh

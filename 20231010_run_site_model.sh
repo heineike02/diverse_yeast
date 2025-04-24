@@ -8,8 +8,18 @@ BASE_DIR=/home/heineikeb/alphafold/
 BASE_SEL_CALC=${BASE_DIR}selection_calculations/site_model/
 
 
+#Check to see how many ogs are left
+
+python3 /home/heineikeb/github/diverse_yeast/20241025_site_model_check_run.py
+
+#while read UNCALC_OG; do
+#  echo "$p"
+#done < ${BASE_DIR}/selection_calculations/site_model/uncalculated_ogs.txt
+
+
+
 #OG_BASE=OG1004_REF_Scer_AF-P40459-F1-model_v2
-for OG_BASE in  OG2006_REF_Scer_AF-P07257-F1-model_v2
+#for OG_BASE in  OG2006_REF_Scer_AF-P07257-F1-model_v2
 
 #10 examples
 #OG4316_REF_Scer_AF-P00424-F1-model_v2 OG2248_REF_Scer_AF-P07143-F1-model_v2 OG3575_REF_Scer_AF-P08067-F1-model_v2 OG2006_REF_Scer_AF-P07257-F1-model_v2 OG4352_REF_Scer_AF-P00127-F1-model_v2 OG2714_REF_Scer_AF-P00427-F1-model_v2 OG4346_REF_Scer_AF-P10174-F1-model_v2 OG4751_REF_Scer_AF-P04039-F1-model_v2 OG1299_REF_Scer_AF-P00549-F1-model_v2 OG1122_REF_Scer_AF-P13711-F1-model_v2
@@ -22,7 +32,11 @@ for OG_BASE in  OG2006_REF_Scer_AF-P07257-F1-model_v2
 #    echo $A
 #done
 #for TREE_FILE in /home/heineikeb/alphafold/msas/structural/tm_align/trees/OG*.tm.fasta.clipkit.treefile.renamed
-do 
+
+#reads in the incomplete site model run from the python file. 
+
+while read OG_BASE; do
+#do 
     #DIR_OG_BASE=$(echo $TREE_FILE | cut -d '.' -f 1)
     #OG_BASE=$(echo $DIR_OG_BASE | cut -d '/' -f 9)
     #echo $TREE_FILE
@@ -58,4 +72,6 @@ do
 
     #python /home/heineike_wsl2/github_s/diverse_yeast/20221206_struct_align_yn00.py
 
-done
+#done
+done < ${BASE_DIR}/selection_calculations/site_model/uncalculated_ogs.txt
+

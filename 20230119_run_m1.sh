@@ -17,6 +17,7 @@ BASE_M1=${BASE_DIR}selection_calculations/m1/
 #    echo $A
 #done
 #for TREE_FILE in /home/heineikeb/alphafold/msas/structural/tm_align/trees/OG*.tm.fasta.clipkit.treefile.renamed
+#for OG_BASE in OG1299_REF_Scer_AF-P00549-F1-model_v2 OG1390_REF_Scer_AF-P47164-F1-model_v2 
 
 #OG4552_REF_Scer_AF-P37299-F1-model_v2
 #OG5441_REF_Scer_AF-P00724-F1-model_v2 OG1122_REF_Scer_AF-P13711-F1-model_v2 OG4150_REF_Scer_AF-P07256-F1-model_v2 OG4316_REF_Scer_AF-P00424-F1-model_v2 OG4346_REF_Scer_AF-P10174-F1-model_v2 OG4360_REF_Scer_AF-P08525-F1-model_v2 OG1377_REF_Scer_AF-P53090-F1-model_v2 OG2112_REF_Scer_AF-P33421-F1-model_v2 OG1631_REF_Scer_AF-P22217-F1-model_v2 OG4744_REF_Scer_AF-P22289-F1-model_v2
@@ -24,7 +25,7 @@ BASE_M1=${BASE_DIR}selection_calculations/m1/
 #OG4755_kluyveromyces_marxianus__OG4755__51_759 OG5006_kluyveromyces_marxianus__OG5006__51_4218
 #OG1275_REF_Scer_AF-P47052-F1-model_v2 OG1287_REF_Scer_AF-P37298-F1-model_v2 OG2006_REF_Scer_AF-P07257-F1-model_v2 OG2248_REF_Scer_AF-P07143-F1-model_v2 OG2704_REF_Scer_AF-P21801-F1-model_v2 OG2714_REF_Scer_AF-P00427-F1-model_v2 OG3208_REF_Scer_AF-P00128-F1-model_v2 OG3505_REF_Scer_AF-P04037-F1-model_v2 OG3575_REF_Scer_AF-P08067-F1-model_v2 OG4118_REF_Scer_AF-P07255-F1-model_v2 OG4352_REF_Scer_AF-P00127-F1-model_v2 OG4751_REF_Scer_AF-P04039-F1-model_v2 OG5490_REF_Scer_AF-P32340-F1-model_v2
 
-for OG_BASE in OG1299_REF_Scer_AF-P00549-F1-model_v2 OG1390_REF_Scer_AF-P47164-F1-model_v2 
+for OG_BASE in OG2197_REF_Scer_AF-P00942-F1-model_v2 OG1145_REF_Scer_AF-P00358-F1-model_v2 OG1218_REF_Scer_AF-P08417-F1-model_v2 
 do 
     #DIR_OG_BASE=$(echo $TREE_FILE | cut -d '.' -f 1)
     #OG_BASE=$(echo $DIR_OG_BASE | cut -d '/' -f 9)
