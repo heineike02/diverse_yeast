@@ -11,8 +11,7 @@ from Bio import AlignIO   #, Align
 from ete3 import Tree, EvolTree
 
 base_dir = os.path.normpath('G:/My Drive/Crick_LMS/projects/diverse_yeasts/alphafold')
-divyeast_dir = os.path.normpath('C:/Users/heineib/Documents/GitHub/diverse_yeast')
-y1000plus_dir = os.path.normpath('C:/Users/heineib/Documents/GitHub/y1000plus_tools/data') + os.sep
+y1000plus_dir = os.path.normpath('C:/Users/heineib/Documents/GitHub/y1000plus_tools')
 genomes_dir = os.path.normpath('G:/My Drive/Crick_LMS/external_data/genomes')
 
 ctg_clade_dict = {'candida_albicans': 'CUG-Ser1',
@@ -33,17 +32,7 @@ model_spec_lookup = {'Scer': 'saccharomyces_cerevisiae',
                      'Spom': 'schizosaccharomyces_pombe'
 }
 
-# import sys
-# #Should integrate this function into this package eventually
-# yeast_esr_exp_path = os.path.normpath('C:/Users/bheineike/Documents/GitHub/yeast_esr_expression_analysis') + os.sep
-# #io_library_path_core = io_library_path + 'core' + os.sep
-# if not(yeast_esr_exp_path in sys.path):
-#     sys.path.append(yeast_esr_exp_path)
-#     print("Added " + yeast_esr_exp_path + " to path" )
-# from yeast_esr_exp import read_SGD_features
-
-#Function to parse sequence id from first line of fasta file in either shen or uniprot proteomes. 
-
+#Functions to parse sequence id from first line of fasta file in either shen or uniprot proteomes. 
 def gene_id_shen(seq_record):
     gene_id = seq_record.description.split()[1].split('=')[1]
     return gene_id
@@ -59,14 +48,9 @@ gene_id_function_dict = {
 
 def gene_id_retrieve(study, seq_record):
     gene_id = gene_id_function_dict[study](seq_record)
-    
     return(gene_id)
 
-def read_SGD_features(sgd_features_fname='G:/My Drive/Crick_LMS/external_data/genomes/saccharomyces_cerevisiae/SGD_features.tab'):
-    
-    #Read in orf/name file and make it a dictionary
-    # Gabe 7/12/16
-    # SC_features_fname = os.path.normpath(data_processing_dir + "\ortholog_files\\SGD_features.tab")
+def read_SGD_features(sgd_features_fname=genomes_dir + os.sep + os.path.normpath('saccharomyces_cerevisiae/SGD_features.tab')):
     
     #SC_features_fname = os.path.normpath(data_processing_dir + "/ortholog_files_regev/SGD_features.tab")
     SC_features_fname = os.path.normpath(sgd_features_fname)
@@ -82,6 +66,47 @@ def read_SGD_features(sgd_features_fname='G:/My Drive/Crick_LMS/external_data/ge
     SC_features_lookup = dict(zip(SC_orfs[3], SC_orfs[15]))
        
     return SC_orfs_lookup, SC_genename_lookup, SC_features_lookup
+
+def SC_common_name_lookup(gene_list):
+    #SC Common Name lookup
+    #Input is a list of orfs, output is a list of common names, or if there is no common name, the orf name
+    
+    SC_orfs_lookup, SC_common_name_lookup, SC_features_lookup = read_SGD_features()
+    SC_common_names = []
+    
+    for gene in gene_list: 
+        try:  
+            SC_common_name = SC_common_name_lookup[gene]
+            if isinstance(SC_common_name,float):
+                if math.isnan(SC_common_name):
+                    SC_common_names.append(gene)
+                else: 
+                    print('float but not nan uh oh!')
+            else: 
+                SC_common_names.append(SC_common_name_lookup[gene])
+        except KeyError: 
+            SC_common_names.append(gene)
+    
+    return SC_common_names
+
+def SC_orf_lookup_by_name(name_list):
+    #Input is a list of common names, output is a list of orfs
+    #would be nice if this worked with a single string as well as a list 
+    #e.g. 'ERV14' as well as ['ERV14']
+    
+    SC_orfs_lookup, SC_common_name_lookup, SC_features_lookup = read_SGD_features()
+    sc_genenames = []
+    
+    for name in name_list: 
+        try:  
+            sc_genename = SC_orfs_lookup[name]
+        except KeyError: 
+            print("S.Cer orf for " + name + "not found")
+            sc_genename = name
+        
+        sc_genenames.append(sc_genename)
+    
+    return sc_genenames
 
 def parse_pathway_list(pathway_list_str):
     if len(pathway_list_str)>0:
@@ -133,7 +158,7 @@ def fasta_extract_shen(f_out, protein_dir, spec_orig_genome, y1000plus_dir, og_o
     protein_fname = protein_dir + spec_orig_genome + '.max.pep'
     seq_records = SeqIO.parse(protein_fname, "fasta")
 
-    spec_lookup_fname = y1000plus_dir + os.path.normpath('y1000plus_tools_data/y1000plus/id_lookups/' + spec_orig_genome + '.csv')
+    spec_lookup_fname = y1000plus_dir + os.sep + os.path.normpath('y1000plus_tools_data/y1000plus/id_lookups/' + spec_orig_genome + '.csv')
     spec_lookup = pd.read_csv(spec_lookup_fname, index_col=0)
 
 #             if spec_orig_genome == 'saccharomyces_cerevisiae':
@@ -190,7 +215,7 @@ def load_model_protein_dict(spec_abbrev):
     
     prot_fnames = {'Scer': genomes_dir +os.sep +  os.path.normpath('saccharomyces_cerevisiae\S288C_reference_genome_R64-2-1_20150113\orf_trans_all_R64-2-1_20150113.fasta'),
                    'Calb': genomes_dir +os.sep +  os.path.normpath('candida_albicans\C_albicans_SC5314_A22_current_default_protein.fasta'),
-                   'Spom': genomes_dir +os.sep +  os.path.normpath('schizosaccharomyces_pombe\peptide.fa')
+                   'Spom': genomes_dir +os.sep +  os.path.normpath('schizosaccharomyces_pombe\peptide_20240918.fa') #Note: previously may have used a version from 20221012
                   }
 
     prot_fname = prot_fnames[spec_abbrev]
@@ -211,18 +236,18 @@ def load_model_gene_id_2_y1000_id():
     gene_id_2_y1000_id = {}
 
     #Load S.cer lookup table: 
-    scer_lookup_fname = y1000plus_dir + os.path.normpath('y1000plus_tools_data/y1000plus/id_lookups/saccharomyces_cerevisiae.csv')
+    scer_lookup_fname = y1000plus_dir + os.sep + os.path.normpath('y1000plus_tools_data/y1000plus/id_lookups/saccharomyces_cerevisiae.csv')
     scer_lookup = pd.read_csv(scer_lookup_fname, index_col=0)
     gene_id_2_y1000_id['Scer'] = dict(zip(scer_lookup.index,scer_lookup['y1000_id']))
 
     #Load C.alb lookup table
-    calb_lookup_fname = y1000plus_dir + os.path.normpath('y1000plus_tools_data/y1000plus/id_lookups/candida_albicans.csv')
+    calb_lookup_fname = y1000plus_dir + os.sep + os.path.normpath('y1000plus_tools_data/y1000plus/id_lookups/candida_albicans.csv')
     calb_lookup = pd.read_csv(calb_lookup_fname, index_col=0)
     gene_id_2_y1000_id['Calb'] = dict(zip(calb_lookup.index,calb_lookup['y1000_id']))
 
     #Spom is difficult because the y1000 id map goes from gene names rather than systematic ids and many of the gene names are synonyms rather than the official names
     #Load S.pom lookup table: 
-    spom_lookup_fname = y1000plus_dir + os.path.normpath('y1000plus_tools_data/y1000plus/id_lookups/schizosaccharomyces_pombe.csv')
+    spom_lookup_fname = y1000plus_dir + os.sep + os.path.normpath('y1000plus_tools_data/y1000plus/id_lookups/schizosaccharomyces_pombe.csv')
     spom_lookup = pd.read_csv(spom_lookup_fname, index_col=0)
     spom_gene_ids = pd.read_table(genomes_dir + os.sep + os.path.normpath('schizosaccharomyces_pombe/gene_IDs_names_products.tsv'), header=None)
     gene_full_2_y1000_id = dict(zip(spom_lookup['gene_full'],spom_lookup['y1000_id']))
@@ -265,11 +290,6 @@ def load_model_swissprot_id_2_gene_id():
     scer_swissprot_id_2_gene_id_df = pd.read_table(base_dir + os.sep + os.path.normpath('msas/structural/Scer_protein_names.tsv'))
     swissprot_id_2_gene_id['Scer'] = dict(zip(scer_swissprot_id_2_gene_id_df['Swiss-Prot'],scer_swissprot_id_2_gene_id_df['OLN']))
     
-    
-    #     ###Should update this one
-    #     calb_swissprot_id_2_gene_id = pickle.load(open(base_dir + os.sep + os.path.normpath('msas/structural/Mapping_calb.pkl'),"rb"))
-    #     swissprot_id_2_gene_id['Calb'] = dict(zip(calb_swissprot_id_2_gene_id.values(),calb_swissprot_id_2_gene_id.keys()))
-
     cgd_id_2_swissprot_id_df = pd.read_table(genomes_dir + os.sep + 'candida_albicans' + os.sep + 'gp2protein_C_albicans_SC5314', header=None)
     cgd_id_2_swissprot_id_df['uniprot']=[uniprot_id.split(':')[1] for uniprot_id in cgd_id_2_swissprot_id_df[1]]
     cgd_id_2_swissprot_id_df['cgd']=[cgd_id.split(':')[1] for cgd_id in cgd_id_2_swissprot_id_df[0]] 
@@ -281,7 +301,6 @@ def load_model_swissprot_id_2_gene_id():
     calb_gene_id_2_swissprot_id_df_uniprot = calb_gene_id_2_swissprot_id_df.loc[[not(item) for item in list(calb_gene_id_2_swissprot_id_df['uniprot'].isna())],:]
 
     swissprot_id_2_gene_id['Calb'] = dict(zip(calb_gene_id_2_swissprot_id_df_uniprot['uniprot'], calb_gene_id_2_swissprot_id_df_uniprot[0]))
-
 
     spom_swissprot_id_2_gene_id_df = pd.read_table(genomes_dir + os.sep + os.path.normpath('schizosaccharomyces_pombe/PomBase2UniProt.tsv'), header=None)
     swissprot_id_2_gene_id['Spom'] = dict(zip(spom_swissprot_id_2_gene_id_df[1],spom_swissprot_id_2_gene_id_df[0]))
