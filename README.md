@@ -29,12 +29,25 @@ Visualize species trees for various figures.
 
 Assemble orthogroups and annotate metadata for each orthogroup in base_dir/selected_proteins/og_metadata.json.  Build a single fasta for all peptides in base_dir/selected_proteins/all_proteins.fasta. 
 
-Uses pairwise sequence similarity scores to map uniprot ids to shen IDS for shen genomes that are not already mapped. 
+Quantify proteins that were calculated. 
 
-Troubleshoot proteins that didn't generate structures and issues with annotation summary on yeast pathways database. 
+20220719_alphafold_PLDDT_scores.ipynb
+
+Assesses PLDDT scores of calculated structure and analyses structures that could not be calculated. 
+
 
 20221012_assemble_peptide_cds_fastas.ipynb
 
+Makes selected_protein_ids.json to list proteins we consider for each species. 
+
+builds list of coding sequences for all proteins we consider for each species. 
+
+Loads tm_align clustering data and assembles and assesses subclusters. 
+
+Filters sequences for dN/dS analysis based on cluster size and sequence length.  
+
+20220921_map_proteomes_to_shen.ipynb
+Uses Pairwise sequence similarity scores to map uniprot ids to shen ids in two groups - first proteomes that were part of the proteomics experiment, then other proteomes with uniprot ids.  
 
 
 
