@@ -23,7 +23,22 @@ genomes_dir:  Includes genomic information from model organisms.
 # Key Scripts: 
 
 ## 20211025_alphafold_selection.ipynb
+select orthogroups and orthologs based on selected species and annotations from yeast pathway database.  Builds list of proteins of interest based on orthogroups from orthomcl clusters
+
+Visualize species trees for various figures. 
+
+Assemble orthogroups and annotate metadata for each orthogroup in base_dir/selected_proteins/og_metadata.json.  Build a single fasta for all peptides in base_dir/selected_proteins/all_proteins.fasta. 
+
+Uses pairwise sequence similarity scores to map uniprot ids to shen IDS for shen genomes that are not already mapped. 
+
+Troubleshoot proteins that didn't generate structures and issues with annotation summary on yeast pathways database. 
+
 20221012_assemble_peptide_cds_fastas.ipynb
+
+
+
+
+
 20230724_phenotype_selection.ipynb
 20240220_alignment_example.ipynb
 20221206_selection_calculations.ipynb
