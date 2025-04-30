@@ -1,14 +1,4 @@
-#Make trimmed alignments compatible with paml from sequence MSAs generated with MAFFT and CLUSTALO
-#
-#First make a strict trimming with clipkit
-#
-#Then thread the nucleic acid and convert to a phylip format 
-#
-#Input: og
-#
-#Output: 
-#  Strictly trimmed protein alignment and codon alignment (used as input for codemL)
-#  Phylip file used as input for Codon alignment. 
+#Make trees based on default trimmed alignments from sequence-based MSAs generated with MAFFT and CLUSTALO
 
 #import sys
 import os

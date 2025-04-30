@@ -4,8 +4,6 @@ source('~/github/diverse_yeast/diverse_yeast_tools.R')
 
 #Make sure to uncomment appropriate lines for working directories.
 
-#adding this for shits and giggles to test my understanding of Github workflow
-
 #Compare LFC across species using ortholog mapping
 
 output_cond = 'CN1_C2_2'
