@@ -19,10 +19,10 @@ y1000plus_dir = os.path.normpath('C:/Users/heineib/Documents/GitHub/y1000plus_to
 genomes_dir:  Includes genomic information from model organisms. 
 
 
-
 # Key Scripts: 
 
 ## Ipython Scripts; 
+All these scripts run on bmh_bioinformatics.yaml anaconda environment in Windows 11, except for Sce_Flux_C13_bmh_edits.ipynb which runs on the cobra.yaml environment
 ### 20211025_alphafold_selection.ipynb
 select orthogroups and orthologs based on selected species and annotations from yeast pathway database.  Builds list of proteins of interest based on orthogroups from orthomcl clusters
 
